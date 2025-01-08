@@ -67,7 +67,7 @@ Parallax Pal offers flexible licensing options to suit various research and comm
    - Free 30-minute consultation included to determine needs
    - Full commercial rights
    - Custom integrations
-   - Priority input regarding integrations/implementations
+   - Priority input regarding integrations/implementations, with a private branch unlocking local model support
    - Access to source code/private GitHub
 
 ## Getting Started 🛠️
