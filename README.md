@@ -1,4 +1,4 @@
-Hi everyone! My name is Chris, and I recently started Parallax Analytics as a business to bridge the divide between the consumer and the technical professional; aka, translating the wizardy of AI and deep learning in general to help SMBs unleash their potential! I am not a coder by nature; my experience is limited to crash-coursing coding and all things artificial intelligence, Python, and deep/machine learning, and this is the first 1.0.0 culmination of my work that I'm proud to present! NOTE: This repository is private at this time, and I will remove and update this note when I'm ready to go public.
+Hi everyone! My name is Chris, and I recently started Parallax Analytics as a business to bridge the divide between the consumer and the technical professional; aka, translating the wizardry of AI and deep learning in general to help SMBs unleash their potential! I am not a coder by nature; my experience is limited to crash-coursing coding and all things artificial intelligence, Python, and deep/machine learning, and this is the first 1.0.0 culmination of my work that I'm proud to present! NOTE: This repository is private at this time, and I will remove and update this note when I'm ready to go public.
 
 # Forthcoming Changes & Future Updates**!! (**: as time allows)
 - Folder path to drop any local models you download (GGUF support first, followed by EXL2, potentially INT8, etc.)
@@ -7,6 +7,11 @@ Hi everyone! My name is Chris, and I recently started Parallax Analytics as a bu
 - Full Docker implementation (limited to Ollama models or API calls)
 - API routing for Together.ai/Openrouter.ai/Hyperbolic support, amongst others
 - OpenAI-compatible endpoints for wide customization
+
+
+
+
+
 
 
 # Parallax Pal 🔍
