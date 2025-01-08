@@ -1,22 +1,10 @@
-Hi everyone! My name is Chris, and I recently started Parallax Analytics as a business to bridge the divide between the consumer and the technical professional; aka, translating the wizardry of AI and deep learning in general to help SMBs unleash their potential! I am not a coder by nature; my experience is limited to crash-coursing coding and all things artificial intelligence, Python, and deep/machine learning, and this is the first 1.0.0 culmination of my work that I'm proud to present! NOTE: This repository is private at this time, and I will remove and update this note when I'm ready to go public.
-
-# Forthcoming Changes & Future Updates**!! 
-(**: as time allows)
-
-- Folder path to drop any local models you download (GGUF support first, followed by EXL2, potentially INT8, etc.)
-- Output folder where Parallax Pal drops a .md summation of the conversation
-- Full Mac/Linux support
-- Full Docker implementation (limited to Ollama models or API calls)
-- API routing for Together.ai/Openrouter.ai/Hyperbolic support, amongst others
-- OpenAI-compatible endpoints for wide customization
+Hi everyone! My name is Chris, and I recently started Parallax Analytics as a business to bridge the divide between the consumer and the technical professional; aka, translating the wizardry of AI and deep learning in general to help SMBs unleash their potential! I am not a coder by nature; my experience is limited to crash-coursing coding and all things artificial intelligence, Python, and deep/machine learning, and this is the first 1.0.0 culmination of my work that I'm proud to present! Please see the end of the Markdown for notes on forthcoming changes and future updates. NOTE: This repository is private at this time, and I will remove and update this note when I'm ready to go public.
 
 
 
-INTRODUCING PARALLAX PAL!
 
 
-
-# Parallax Pal 🔍
+# Introducing ... Parallax Pal! 🔍
 
 Hey there! 👋 Parallax Pal is your friendly AI research assistant, designed to help you dive deep into any topic with the power of local Large Language Models (LLMs) through Ollama. Unlike your average chatbot, Parallax Pal structures its research, breaking down complex questions into focused areas, systematically exploring each through web searches and content scraping, and then compiling its findings into a neat document. 📝
 
