@@ -4,6 +4,52 @@
 
 Parallax Pal is an advanced AI research assistant that transforms complex research queries into structured, comprehensive insights. Unlike traditional chatbots, this tool methodically breaks down research questions, explores web sources, and synthesizes findings with unprecedented depth and precision.
 
+## Pricing & Licensing 💡
+
+Parallax Pal offers flexible licensing options to suit various research and commercial needs:
+
+### Subscription Tiers
+
+1. **Community Tier**: $0/month
+   - Limited to 100 research queries
+   - Single AI model
+   - Basic features
+   - Non-commercial use only
+
+2. **Research Tier**: $9.99/month
+   - Up to 1,000 research queries
+   - 3 AI models
+   - Advanced research tools
+   - Academic and non-profit use
+   - 30-day free trial
+
+3. **Professional Tier**: $29.99/month
+   - Up to 10,000 research queries
+   - 10 AI models
+   - Full commercial usage rights
+   - Priority support
+   - 30-day free trial
+
+4. **Enterprise Tier**: $99.99/month
+   - Unlimited research queries
+   - 50 AI models
+   - Full commercial usage rights
+   - Dedicated support
+   - Custom integrations
+   - 30-day free trial
+
+5. **Perpetual License**: $2,500
+   - One-time purchase
+   - Unlimited lifetime usage
+   - Full commercial rights
+   - Priority enterprise support
+
+### Licensing Options
+
+- **Non-Commercial Use**: Free and Research tiers
+- **Commercial Use**: Professional and Enterprise tiers
+- **Perpetual License**: Includes full commercial rights
+
 ## Key Features 🚀
 
 - **Intelligent Research Planning**: Automatically creates prioritized research focus areas
@@ -76,10 +122,8 @@ Contributions are welcome! This is a prototype with significant potential for en
 
 © 2025 Chris Dukes, Parallax Analytics. All Rights Reserved.
 
-THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. UNAUTHORIZED USE, COPYING, MODIFICATION, DISTRIBUTION, OR REPRODUCTION IS STRICTLY PROHIBITED.
-
-NOTICE: This project contains derivative work from TheBlewish's Automated-AI-Web-Research-Ollama.
+Detailed licensing terms available in the LICENSE file. Different usage rights apply based on selected subscription tier.
 
 ## Disclaimer ⚠️
 
-This project is for educational and research purposes. Users must comply with all API and service terms of use.
+This project is primarily for educational and research purposes. Users must comply with all API and service terms of use.

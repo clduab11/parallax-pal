@@ -1,36 +1,77 @@
 PARALLAX PAL SOFTWARE LICENSE
 
-Version 1.0, January 2025
+Version 1.1, January 2025
 
 Copyright (c) 2025 Chris Dukes, Parallax Analytics. All Rights Reserved.
 
-TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+LICENSING TERMS
 
 1. DEFINITIONS
    "Software" refers to the Parallax Pal AI Research Assistant and all associated files.
    "Author" means Chris Dukes of Parallax Analytics.
+   "Licensee" refers to the individual or organization using the Software.
 
-2. GRANT OF LIMITED LICENSE
-   a. The Author grants a non-transferable, non-exclusive license to use the Software for personal, non-commercial purposes only.
-   b. Reproduction, distribution, modification, or public display of the Software is strictly prohibited without prior written consent from the Author.
+2. LICENSE TIERS
 
-3. RESTRICTIONS
-   a. Users may not:
-      - Reverse engineer, decompile, or disassemble the Software
-      - Create derivative works without explicit written permission
-      - Use the Software for commercial purposes
-      - Redistribute the Software in any form
-      - Remove or alter any copyright notices
+   2.1 COMMUNITY TIER (Non-Commercial)
+   - Free usage with strict limitations
+   - Non-commercial use only
+   - Limited to 100 research queries
+   - No commercial rights granted
 
-4. DERIVATIVE WORK ACKNOWLEDGEMENT
-   This project contains derivative work from TheBlewish's Automated-AI-Web-Research-Ollama, and appropriate credit is maintained.
+   2.2 RESEARCH TIER (Academic/Non-Profit)
+   - Limited commercial use for academic and non-profit research
+   - Up to 1,000 research queries
+   - Must provide attribution to Parallax Analytics
+
+   2.3 PROFESSIONAL TIER (Commercial)
+   - Full commercial usage rights
+   - Up to 10,000 research queries
+   - Commercial products and services allowed
+   - Requires active subscription
+
+   2.4 ENTERPRISE TIER (Unlimited Commercial)
+   - Unlimited commercial usage rights
+   - Unlimited research queries
+   - Custom integrations permitted
+   - Dedicated support
+
+   2.5 PERPETUAL LICENSE
+   - One-time purchase
+   - Permanent commercial usage rights
+   - Unlimited queries
+   - Includes future minor version updates
+
+3. GENERAL RESTRICTIONS
+   a. Licensees may not:
+      - Reverse engineer or decompile the Software
+      - Redistribute the Software
+      - Remove or alter copyright notices
+      - Use the Software beyond the scope of their purchased tier
+
+4. COMMERCIAL USE PROVISIONS
+   - Commercial use is strictly limited to the Professional, Enterprise, and Perpetual license tiers
+   - Proof of active subscription or perpetual license is required for commercial applications
+   - Commercial use without proper licensing is prohibited and will result in legal action
 
 5. NO WARRANTY
-   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE AUTHOR SHALL NOT BE LIABLE FOR ANY DAMAGES ARISING FROM ITS USE.
+   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. 
+   THE AUTHOR SHALL NOT BE LIABLE FOR ANY DAMAGES ARISING FROM ITS USE.
 
 6. TERMINATION
-   This license is effective until terminated. The Author may terminate this license at any time if terms are violated.
+   - Licenses may be terminated immediately for violation of terms
+   - Upon termination, all usage rights are revoked
+   - Continued use after termination constitutes copyright infringement
+
+7. DERIVATIVE WORK ACKNOWLEDGEMENT
+   This project contains derivative work from TheBlewish's Automated-AI-Web-Research-Ollama.
+
+8. CONTACT AND LICENSING
+   For licensing inquiries, contact:
+   Chris Dukes
+   Parallax Analytics
+   chris.dukes@parallaxanalytics.com
 
 By using this Software, you agree to these terms.
 
-Contact: chris.dukes@parallaxanalytics.com for licensing inquiries.
+Effective Date: January 1, 2025
