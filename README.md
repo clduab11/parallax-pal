@@ -40,8 +40,8 @@ Parallax Pal isn't just a chatbot; it's an automated research assistant that met
 #### For All Platforms:
 1. **Clone the repository:**
     ```sh
-    git clone https://github.com/TheBlewish/Automated-AI-Web-Researcher-Ollama
-    cd Automated-AI-Web-Researcher-Ollama
+    git clone https://github.com/clduab11/parallax-pal
+    cd parallax-pal
     ```
 2.  **Set up a virtual environment:**
     ```sh
