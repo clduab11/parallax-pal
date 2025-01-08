@@ -1,5 +1,13 @@
 Hi everyone! My name is Chris, and I recently started Parallax Analytics as a business to bridge the divide between the consumer and the technical professional; aka, translating the wizardy of AI and deep learning in general to help SMBs unleash their potential! I am not a coder by nature; my experience is limited to crash-coursing coding and all things artificial intelligence, Python, and deep/machine learning, and this is the first 1.0.0 culmination of my work that I'm proud to present! NOTE: This repository is private at this time, and I will remove and update this note when I'm ready to go public.
 
+# Forthcoming Changes & Future Updates**!! (**: as time allows)
+- Folder path to drop any local models you download (GGUF support first, followed by EXL2, potentially INT8, etc.)
+- Output folder where Parallax Pal drops a .md summation of the conversation
+- Full Mac/Linux support
+- Full Docker implementation (limited to Ollama models or API calls)
+- API routing for Together.ai/Openrouter.ai/Hyperbolic support, amongst others
+- OpenAI-compatible endpoints for wide customization
+
 
 # Parallax Pal 🔍
 
@@ -73,13 +81,13 @@ Key Windows Considerations:
 - Docker configuration requires WSL 2 backend
 - Virtual environment activation uses `venv\Scripts\activate`
 - CTRL+Z may not work consistently - use 'q' command to quit
-4.  **Configure Ollama:**
+1.  **Configure Ollama:**
     - Make sure your Ollama instance is running and accessible at `http://host.docker.internal:11434` 🐳
     - Pull your preferred model using Ollama (e.g., `ollama pull llama2`)
     - It's recommended to use a model with a large context window for better research capabilities
     - Set the MODEL_NAME in your .env file to match your pulled model's name
 
-5.  **Configure the LLM:**
+2.  **Configure the LLM:**
     Parallax Pal will automatically detect and use the models available in your local Ollama instance. The configuration in `llm_config.py` handles:
     - Connection to your local Ollama instance
     - Model parameters (temperature, context window, etc.)
