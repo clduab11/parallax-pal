@@ -122,4 +122,4 @@ Detailed licensing terms available in the LICENSE file. Different usage rights a
 
 ## Disclaimer ⚠️
 
-This project is primarily for educational and research purposes. Users must comply with all API and service terms of use.
+This project is primarily for educational and research purposes. Users must comply with all API and service terms of use. Parallax Analytics shall be held indemnified in the event of any unethical, amoral, or illegal behavior with the usage of Parallax Pal. User accepts all risk of utilizing generative deep learning/artificial intelligence technology for any contextual and/or informational purposes.
