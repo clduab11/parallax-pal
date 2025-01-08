@@ -885,8 +885,81 @@ Do not provide any additional information or explanation, note that the time ran
             if url not in self.searched_urls:
                 self.add_to_document(content, url, focus_area)
 
+    def _single_iteration_research(self):
+        """Perform a single iteration of research"""
+        self.is_running = True
+        try:
+            self.research_started.set()
+            
+            # Start model initialization in background
+            model_init_thread = threading.Thread(target=self._initialize_model, daemon=True)
+            model_init_thread.start()
+            self.ui.update_output("\nInitializing AI model in background...")
+
+            # Process search results first
+            self.ui.update_output("\nProcessing search results...")
+            initial_queries = self._generate_initial_queries(self.original_query)
+            all_scraped_content = {}
+
+            for query in initial_queries:
+                if self.should_terminate.is_set():
+                    break
+
+                try:
+                    self.ui.update_output(f"\nSearching: {query}")
+                    results = self.search_engine.perform_search(query, time_range='none')
+
+                    if results:
+                        selected_urls = self.search_engine.select_relevant_pages(results, query)
+                        if selected_urls:
+                            self.ui.update_output("\n⚙️ Scraping selected pages...")
+                            scraped_content = self.search_engine.scrape_content(selected_urls)
+                            if scraped_content:
+                                all_scraped_content.update(scraped_content)
+
+                except Exception as e:
+                    logger.error(f"Error in search: {str(e)}")
+                    self.ui.update_output(f"Error during search: {str(e)}")
+
+            # Wait for model initialization to complete
+            self.ui.update_output("\nWaiting for AI model initialization to complete...")
+            model_init_thread.join()
+
+            # Generate and process focus areas
+            self.ui.update_output("\nAnalyzing collected information...")
+            analysis_result = self.strategic_parser.strategic_analysis(self.original_query)
+
+            if analysis_result and analysis_result.focus_areas:
+                focus_areas = analysis_result.focus_areas
+                self.ui.update_output(f"\nGenerated {len(focus_areas)} research areas:")
+                
+                for focus_area in focus_areas:
+                    if self.should_terminate.is_set():
+                        break
+
+                    self.current_focus = focus_area
+                    self.ui.update_output(f"\nProcessing: {focus_area.area}")
+
+                    # Add relevant content to document
+                    for url, content in all_scraped_content.items():
+                        if url not in self.searched_urls:
+                            self.add_to_document(content, url, focus_area.area)
+
+            # Generate final summary
+            self.ui.update_output("\nGenerating research summary...")
+            summary = self.terminate_research()
+            self.ui.update_output("\nResearch complete. Summary:")
+            self.ui.update_output(summary)
+
+        except Exception as e:
+            logger.error(f"Error in single iteration research: {str(e)}")
+            self.ui.update_output(f"Error in research process: {str(e)}")
+        finally:
+            self.is_running = False
+            self.should_terminate.set()
+
     def _research_loop(self):
-        """Main research loop with asynchronous model loading and search-first processing"""
+        """Main research loop for continuous mode"""
         self.is_running = True
         try:
             self.research_started.set()
@@ -1011,29 +1084,36 @@ Do not provide any additional information or explanation, note that the time ran
             
         return queries[:3]  # Limit to top 3 queries
 
-    def start_research(self, topic: str):
+    def start_research(self, topic: str, continuous_mode: bool = False):
         """Start research with new session document"""
         try:
             self.ui.setup()
             self.original_query = topic
             self._initialize_document()
+            self.continuous_mode = continuous_mode
 
-            self.ui.update_output(f"Starting research on: {topic}")
+            mode_str = "continuous" if continuous_mode else "single-iteration"
+            self.ui.update_output(f"Starting {mode_str} research on: {topic}")
             self.ui.update_output(f"Session document: {self.document_path}")
-            self.ui.update_output("\nCommands available during research:")
-            self.ui.update_output("'s' = Show status")
-            self.ui.update_output("'f' = Show current focus")
-            self.ui.update_output("'p' = Pause and assess the research progress")  # New command
-            self.ui.update_output("'q' = Quit research\n")
+
+            if continuous_mode:
+                self.ui.update_output("\nCommands available during research:")
+                self.ui.update_output("'s' = Show status")
+                self.ui.update_output("'f' = Show current focus")
+                self.ui.update_output("'p' = Pause and assess the research progress")
+                self.ui.update_output("'q' = Quit research\n")
 
             # Reset events
             self.should_terminate.clear()
             self.research_started.clear()
-            self.research_paused = False  # Ensure research is not paused at the start
+            self.research_paused = False
             self.awaiting_user_decision = False
 
             # Start research thread
-            self.research_thread = threading.Thread(target=self._research_loop, daemon=True)
+            self.research_thread = threading.Thread(
+                target=self._research_loop if continuous_mode else self._single_iteration_research,
+                daemon=True
+            )
             self.research_thread.start()
 
             # Wait for research to actually start
@@ -1563,12 +1643,10 @@ if __name__ == "__main__":
                 if not topic:
                     continue
 
-                if not topic.startswith('@'):
-                    print(f"{Fore.YELLOW}Please start your research query with '@'{Style.RESET_ALL}")
-                    continue
-
-                topic = topic[1:]  # Remove @ prefix
-                manager.start_research(topic)
+                continuous_mode = topic.startswith('@')
+                if continuous_mode:
+                    topic = topic[1:]  # Remove @ prefix
+                manager.start_research(topic, continuous_mode)
                 summary = manager.terminate_research()
                 print(f"\n{Fore.GREEN}Research Summary:{Style.RESET_ALL}")
                 print(summary)

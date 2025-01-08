@@ -56,8 +56,21 @@ if sys.platform == 'win32':
 
 logger.debug("Initializing main components...")
 
+def display_ascii_art():
+    art = """
+    ██████╗  █████╗ ██████╗  █████╗ ██╗     ██╗      █████╗ ██╗  ██╗██████╗  █████╗ ██╗
+    ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║     ██║     ██╔══██╗╚██╗██╔╝██╔══██╗██╔══██╗██║
+    ██████╔╝███████║██████╔╝███████║██║     ██║     ███████║ ╚███╔╝ ██████╔╝███████║██║
+    ██╔═══╝ ██╔══██║██╔══██╗██╔══██║██║     ██║     ██╔══██║ ██╔██╗ ██╔═══╝ ██╔══██║██║
+    ██║     ██║  ██║██║  ██║██║  ██║███████╗███████╗██║  ██║██╔╝ ██╗██║     ██║  ██║███████╗
+    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝
+    ═══════════════════════════ Your AI Research Companion ═══════════════════════════
+    """
+    print(art)
+
 def main():
     try:
+        display_ascii_art()
         from llm_wrapper import LLMWrapper, LLMError
         from search_engine import EnhancedSelfImprovingSearch
         # Import research manager with Windows-specific handling
@@ -107,16 +120,34 @@ def main():
         manager = ResearchManager(llm, parser, search_engine)
         
         console.print("[green]ParallaxPal initialized successfully![/green]")
+        console.print("[yellow]Press 'g' at any time to toggle GPU acceleration[/yellow]")
         console.print("[cyan]Enter your research query (starting with @):[/cyan]")
         
         try:
-            query = input().strip()
-            if not query.startswith('@'):
-                console.print("[red]Query must start with @[/red]")
-                return
+            # Start keyboard listener thread
+            def check_keyboard():
+                while True:
+                    if msvcrt.kbhit():
+                        key = msvcrt.getch().decode().lower()
+                        if key == 'g':
+                            llm.toggle_gpu()
+
+            keyboard_thread = threading.Thread(target=check_keyboard, daemon=True)
+            keyboard_thread.start()
+
+            while True:
+                query = input().strip()
+                if query.lower() == 'g':
+                    llm.toggle_gpu()
+                    console.print("[cyan]Enter your research query (optionally start with @ for continuous mode):[/cyan]")
+                    continue
                 
-            query = query[1:]  # Remove @ prefix
-            manager.start_research(query)
+                continuous_mode = query.startswith('@')
+                if continuous_mode:
+                    query = query[1:]  # Remove @ prefix
+                
+                manager.start_research(query, continuous_mode)
+                break
             
         except KeyboardInterrupt:
             console.print("\n[yellow]Operation cancelled by user[/yellow]")
