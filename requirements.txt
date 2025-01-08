@@ -26,3 +26,5 @@ hpack==4.0.0
 hyperframe==6.0.1
 socksio==1.0.0
 brotli==1.1.0
+windows-curses==2.4.0
+pyreadline3==3.4.1

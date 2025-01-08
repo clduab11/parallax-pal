@@ -13,12 +13,17 @@ from queue import Queue
 from datetime import datetime
 from io import StringIO
 from colorama import init, Fore, Style
-import select
-import termios
-import tty
 from threading import Event
 from urllib.parse import urlparse
 from pathlib import Path
+
+# Import terminal handling modules based on OS
+if os.name == 'nt':
+    import msvcrt
+else:
+    import select
+    import termios
+    import tty
 from web_scraper import MultiSearcher
 
 # Initialize colorama for cross-platform color support
@@ -1465,44 +1470,22 @@ Answer:
             return f"I apologize, but I encountered an error processing your question: {str(e)}"
 
     def get_multiline_conversation_input(self) -> str:
-        """Get multiline input with CTRL+D handling for conversation mode"""
+        """Get multiline input with CTRL+Z (Windows) or CTRL+D (Unix) handling for conversation mode"""
         buffer = []
 
         if os.name == 'nt':
-            import msvcrt
-            current_line = []
-            while True:
-                if msvcrt.kbhit():
-                    char = msvcrt.getch().decode('utf-8')
-
-                    # CTRL+D detection
-                    if not char or ord(char) == 4:  # EOF or CTRL+D
-                        sys.stdout.write('\n')
-                        if current_line:
-                            buffer.append(''.join(current_line))
-                        return ' '.join(buffer).strip()
-
-                    # Handle special characters
-                    elif ord(char) == 13:  # Enter
-                        sys.stdout.write('\n')
-                        buffer.append(''.join(current_line))
-                        current_line = []
-
-                    elif ord(char) == 127:  # Backspace
-                        if current_line:
-                            current_line.pop()
-                            sys.stdout.write('\b \b')
-
-                    elif ord(char) == 3:  # CTRL+C
-                        sys.stdout.write('\n')
-                        return 'quit'
-
-                    # Normal character
-                    elif 32 <= ord(char) <= 126:  # Printable characters
-                        current_line.append(char)
-                        sys.stdout.write(char)
-
-                    sys.stdout.flush()
+            print("Enter your message (Press CTRL+Z and Enter to submit):")
+            try:
+                while True:
+                    try:
+                        line = input()
+                        if line:
+                            buffer.append(line)
+                    except EOFError:  # CTRL+Z on Windows
+                        break
+            except KeyboardInterrupt:
+                return 'quit'
+            return ' '.join(buffer).strip()
         else:
             # Save original terminal settings
             fd = sys.stdin.fileno()
