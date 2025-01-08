@@ -108,6 +108,7 @@ class ParallaxPal:
         self.original_topic: Optional[str] = None
         self.search_engine = EnhancedSelfImprovingSearch(llm, parser)
         self.console = Console()
+        self.research_synthesis = None
         
         logger.info("ParallaxPal initialized successfully")
 
@@ -376,11 +377,33 @@ Format each question with an @ prefix on a new line."""
                     temperature=0.7
                 )
             
-            self.console.print(Panel(
-                Markdown(synthesis),
-                title="Research Summary",
-                border_style="green"
-            ))
+            # Store synthesis for potential conversation
+            self.research_synthesis = synthesis
+
+            # Ask user for next action
+            choice = questionary.select(
+                "What would you like to do?",
+                choices=[
+                    "1. Enter conversation mode about your research",
+                    "2. Display synthesized results",
+                    "3. Exit research"
+                ],
+                style=questionary.Style([
+                    ('qmark', 'fg:cyan bold'),
+                    ('question', 'fg:cyan bold'),
+                    ('pointer', 'fg:cyan bold'),
+                    ('highlighted', 'fg:cyan bold'),
+                ])
+            ).ask()
+
+            if choice.startswith("1"):
+                self.enter_conversation_mode()
+            elif choice.startswith("2"):
+                self.console.print(Panel(
+                    Markdown(synthesis),
+                    title="Research Summary",
+                    border_style="green"
+                ))
             
             # Reset continuous mode after finalization
             self.continuous_mode = False
@@ -389,6 +412,60 @@ Format each question with an @ prefix on a new line."""
         except Exception as e:
             logger.error(f"Error finalizing research: {str(e)}")
             self.console.print("[bold red]Error synthesizing research findings.[/bold red]")
+
+    def enter_conversation_mode(self) -> None:
+        """Enter conversation mode about the research findings"""
+        if not self.research_synthesis:
+            self.console.print("[yellow]No research synthesis available for conversation.[/yellow]")
+            return
+
+        self.console.print(Panel(
+            "[bold cyan]Entering Research Conversation Mode[/bold cyan]\n" +
+            "Ask questions about the research findings.\n" +
+            "Type 'exit' to leave conversation mode.",
+            title="Conversation Mode",
+            border_style="cyan"
+        ))
+
+        while True:
+            try:
+                question = questionary.text(
+                    "Ask about your research:",
+                    style=questionary.Style([
+                        ('qmark', 'fg:cyan bold'),
+                        ('question', 'fg:cyan bold')
+                    ])
+                ).ask()
+
+                if not question or question.lower() == 'exit':
+                    break
+
+                # Generate response based on research synthesis
+                prompt = f"""Based on this research synthesis:
+{self.research_synthesis}
+
+Answer this question about the research: {question}
+Provide a clear and concise response based only on the information from the research."""
+
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    console=self.console
+                ) as progress:
+                    task = progress.add_task("🤔 Analyzing question...", total=None)
+                    response = self.llm.generate(prompt, max_tokens=300)
+
+                self.console.print(Panel(
+                    Markdown(response),
+                    title="Research Answer",
+                    border_style="green"
+                ))
+
+            except Exception as e:
+                logger.error(f"Error in conversation mode: {str(e)}")
+                self.console.print("[bold red]Error processing question. Please try again.[/bold red]")
+
+        self.console.print("[yellow]Exiting conversation mode.[/yellow]")
 
     def show_help(self) -> None:
         """Display help information with improved formatting"""
