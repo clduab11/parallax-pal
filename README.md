@@ -114,10 +114,6 @@ pip install -r requirements.txt
    - `F`: Finalize and synthesize research
    - `Q`: Quit research
 
-## Contributing 🤝
-
-Contributions are welcome! This is a prototype with significant potential for enhancement.
-
 ## License 
 
 © 2025 Chris Dukes, Parallax Analytics. All Rights Reserved.
