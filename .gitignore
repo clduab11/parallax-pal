@@ -1,43 +1,55 @@
-__pycache__
-venv
-logs
-modelfile
-research_session_*
-
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
 # Virtual Environment
 venv/
+ENV/
 env/
 .env
 
-# IDEs and Editors
-.vscode/
+# IDE
 .idea/
+.vscode/
 *.swp
 *.swo
+.project
+.pydevproject
+.settings/
 
-# OS generated files
+# Logs and local data
+logs/
+*.log
+*.sqlite
+*.db
+
+# OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Logs
-*.log
-
-# Model files (if they're large, you might want to exclude them)
-*.gguf
-
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Other
-*.bak
-*.tmp
+# Project specific
+vcpkg/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/

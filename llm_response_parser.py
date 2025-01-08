@@ -216,7 +216,7 @@ class UltimateLLMResponseParser:
         return None
 
     def _extract_numbers(self, text: str) -> List[int]:
-        return [int(num) for num in re.findall(r'\b(?:10|[1-9])\b', text)]
+        return [int(num) for num in re.findall(r'\b\d+\b', text)]
 
     def _infer_decision(self, text: str) -> str:
         text = text.lower()

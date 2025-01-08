@@ -19,6 +19,7 @@ import tty
 from threading import Event
 from urllib.parse import urlparse
 from pathlib import Path
+from web_scraper import MultiSearcher
 
 # Initialize colorama for cross-platform color support
 if os.name == 'nt':  # Windows-specific initialization
@@ -251,21 +252,23 @@ Priority: [number 1-5]
         return areas[:5]
 
     def format_analysis_result(self, result: AnalysisResult) -> str:
-        """Format the results for display"""
+        """Format the results for display with memory efficiency"""
         if not result:
             return "No valid analysis result generated."
 
-        formatted = [
-            f"\nResearch Areas for: {result.original_question}\n"
-        ]
-
+        # Use StringIO for efficient string concatenation
+        from io import StringIO
+        output = StringIO()
+        
+        output.write(f"\nResearch Areas for: {result.original_question}\n")
+        
         for i, focus in enumerate(result.focus_areas, 1):
-            formatted.extend([
-                f"\n{i}. {focus.area}",
-                f"   Priority: {focus.priority}"
-            ])
-
-        return "\n".join(formatted)
+            output.write(f"\n{i}. {focus.area}")
+            output.write(f"\n   Priority: {focus.priority}")
+        
+        formatted_result = output.getvalue()
+        output.close()
+        return formatted_result
 
 class OutputRedirector:
     """Redirects stdout and stderr to a string buffer"""
@@ -379,40 +382,83 @@ class TerminalUI:
 
     def _cleanup(self):
         """Enhanced resource cleanup with better process handling"""
-        self.should_terminate.set()
-
-        # Handle research thread with improved termination
-        if self.research_thread and self.research_thread.is_alive():
-            try:
-                self.research_thread.join(timeout=1.0)
-                if self.research_thread.is_alive():
-                    import ctypes
-                    ctypes.pythonapi.PyThreadState_SetAsyncExc(
-                        ctypes.c_long(self.research_thread.ident),
-                        ctypes.py_object(SystemExit))
-                    time.sleep(0.1)  # Give thread time to exit
-                    if self.research_thread.is_alive():  # Double-check
-                        ctypes.pythonapi.PyThreadState_SetAsyncExc(
-                            ctypes.c_long(self.research_thread.ident),
-                            0)  # Reset exception
-            except Exception as e:
-                logger.error(f"Error terminating research thread: {str(e)}")
-
-        # Clean up LLM with improved error handling
-        if hasattr(self, 'llm') and hasattr(self.llm, '_cleanup'):
-            try:
-                self.llm.cleanup()
-            except Exception as e:
-                logger.error(f"Error cleaning up LLM: {str(e)}")
-
-        # Ensure terminal is restored
         try:
-            curses.endwin()
-        except:
-            pass
+            # Set termination flags
+            self.should_terminate.set()
+            self.shutdown_event.set()
 
-        # Final cleanup of UI
-        self.cleanup()
+            # Handle research thread with improved termination
+            if self.research_thread and self.research_thread.is_alive():
+                try:
+                    # First try graceful shutdown
+                    self.research_thread.join(timeout=2.0)
+                    
+                    # If thread is still alive, force terminate
+                    if self.research_thread.is_alive():
+                        if os.name == 'nt':  # Windows
+                            import ctypes
+                            ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                                ctypes.c_long(self.research_thread.ident),
+                                ctypes.py_object(SystemExit))
+                            time.sleep(0.5)
+                            if self.research_thread.is_alive():
+                                ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                                    ctypes.c_long(self.research_thread.ident),
+                                    0)
+                        else:  # Unix-like
+                            import signal
+                            os.kill(self.research_thread.ident, signal.SIGTERM)
+                            time.sleep(0.5)
+                except Exception as e:
+                    logger.error(f"Error terminating research thread: {str(e)}")
+
+            # Clean up LLM
+            if hasattr(self, 'llm'):
+                try:
+                    if hasattr(self.llm, '_cleanup'):
+                        self.llm._cleanup()
+                    elif hasattr(self.llm, 'cleanup'):
+                        self.llm.cleanup()
+                except Exception as e:
+                    logger.error(f"Error cleaning up LLM: {str(e)}")
+
+            # Restore terminal state
+            if os.name == 'nt':  # Windows
+                try:
+                    import msvcrt
+                    msvcrt.SetConsoleMode(msvcrt.get_osfhandle(sys.stdin.fileno()),
+                                      self.old_terminal_settings if hasattr(self, 'old_terminal_settings') else 0x0)
+                except Exception as e:
+                    logger.error(f"Error restoring Windows terminal: {str(e)}")
+            else:  # Unix-like
+                try:
+                    curses.endwin()
+                except Exception:
+                    pass
+
+                if hasattr(self, 'old_terminal_settings'):
+                    try:
+                        termios.tcsetattr(sys.stdin.fileno(),
+                                      termios.TCSADRAIN,
+                                      self.old_terminal_settings)
+                    except Exception as e:
+                        logger.error(f"Error restoring Unix terminal: {str(e)}")
+
+            # Final UI cleanup
+            if hasattr(self, 'ui'):
+                try:
+                    self.ui.cleanup()
+                except Exception as e:
+                    logger.error(f"Error cleaning up UI: {str(e)}")
+
+        except Exception as e:
+            logger.error(f"Critical error during cleanup: {str(e)}")
+        finally:
+            # Reset instance variables
+            self.research_thread = None
+            self.is_running = False
+            self.thinking = False
+            self.research_paused = False
 
     def _refresh_input_prompt(self, prompt="Enter command: "):
         """Refresh the fixed input prompt at bottom with display fix"""
@@ -552,7 +598,6 @@ class TerminalUI:
             self.shutdown_event.set()
             self._cleanup()  # Call private cleanup first
             self.cleanup()   # Then public cleanup
-            curses.endwin()  # Final attempt to restore terminal
         except:
             pass
         finally:
@@ -836,21 +881,54 @@ Do not provide any additional information or explanation, note that the time ran
                 self.add_to_document(content, url, focus_area)
 
     def _research_loop(self):
-        """Main research loop with comprehensive functionality"""
+        """Main research loop with asynchronous model loading and search-first processing"""
         self.is_running = True
         try:
             self.research_started.set()
+            
+            # Start model initialization in background
+            model_init_thread = threading.Thread(target=self._initialize_model, daemon=True)
+            model_init_thread.start()
+            self.ui.update_output("\nInitializing AI model in background...")
 
             while not self.should_terminate.is_set() and not self.shutdown_event.is_set():
-                # Check if research is paused
                 if self.research_paused:
                     time.sleep(1)
                     continue
 
-                self.ui.update_output("\nAnalyzing research progress...")
+                self.ui.update_output("\nProcessing search results first...")
 
-                # Generate focus areas
-                self.ui.update_output("\nGenerating research focus areas...")
+                # Generate initial search queries without model
+                initial_queries = self._generate_initial_queries(self.original_query)
+                all_scraped_content = {}
+
+                # Process search results first
+                for query in initial_queries:
+                    if self.should_terminate.is_set():
+                        break
+
+                    try:
+                        self.ui.update_output(f"\nSearching: {query}")
+                        results = self.search_engine.perform_search(query, time_range='none')
+
+                        if results:
+                            selected_urls = self.search_engine.select_relevant_pages(results, query)
+                            if selected_urls:
+                                self.ui.update_output("\n⚙️ Scraping selected pages...")
+                                scraped_content = self.search_engine.scrape_content(selected_urls)
+                                if scraped_content:
+                                    all_scraped_content.update(scraped_content)
+
+                    except Exception as e:
+                        logger.error(f"Error in search: {str(e)}")
+                        self.ui.update_output(f"Error during search: {str(e)}")
+
+                # Wait for model initialization to complete
+                self.ui.update_output("\nWaiting for AI model initialization to complete...")
+                model_init_thread.join()
+
+                # Now use the model with collected search results
+                self.ui.update_output("\nAnalyzing collected information...")
                 analysis_result = self.strategic_parser.strategic_analysis(self.original_query)
 
                 if not analysis_result:
@@ -867,12 +945,11 @@ Do not provide any additional information or explanation, note that the time ran
                     self.ui.update_output(f"\nArea {i}: {focus.area}")
                     self.ui.update_output(f"Priority: {focus.priority}")
 
-                # Process each focus area in priority order
+                # Process focus areas with collected content
                 for focus_area in focus_areas:
                     if self.should_terminate.is_set():
                         break
 
-                    # Check if research is paused
                     while self.research_paused and not self.should_terminate.is_set():
                         time.sleep(1)
 
@@ -880,55 +957,54 @@ Do not provide any additional information or explanation, note that the time ran
                         break
 
                     self.current_focus = focus_area
-                    self.ui.update_output(f"\nInvestigating: {focus_area.area}")
+                    self.ui.update_output(f"\nAnalyzing content for: {focus_area.area}")
 
-                    queries = self.formulate_search_queries(focus_area)
-                    if not queries:
-                        continue
-
-                    for query in queries:
-                        if self.should_terminate.is_set():
-                            break
-
-                        # Check if research is paused
-                        while self.research_paused and not self.should_terminate.is_set():
-                            time.sleep(1)
-
-                        if self.should_terminate.is_set():
-                            break
-
-                        try:
-                            self.ui.update_output(f"\nSearching: {query}")
-                            results = self.search_engine.perform_search(query, time_range='none')
-
-                            if results:
-                                # self.search_engine.display_search_results(results)
-                                selected_urls = self.search_engine.select_relevant_pages(results, query)
-
-                                if selected_urls:
-                                    self.ui.update_output("\n⚙️ Scraping selected pages...")
-                                    scraped_content = self.search_engine.scrape_content(selected_urls)
-                                    if scraped_content:
-                                        for url, content in scraped_content.items():
-                                            if url not in self.searched_urls:
-                                                self.add_to_document(content, url, focus_area.area)
-
-                        except Exception as e:
-                            logger.error(f"Error in search: {str(e)}")
-                            self.ui.update_output(f"Error during search: {str(e)}")
+                    # Add relevant content to document based on focus area
+                    for url, content in all_scraped_content.items():
+                        if url not in self.searched_urls:
+                            self.add_to_document(content, url, focus_area.area)
 
                     if self.check_document_size():
                         self.ui.update_output("\nDocument size limit reached. Finalizing research.")
                         return
 
-                # After processing all areas, cycle back to generate new ones
-                self.ui.update_output("\nAll current focus areas investigated. Generating new areas...")
+                self.ui.update_output("\nAll focus areas processed. Starting next iteration...")
 
         except Exception as e:
             logger.error(f"Error in research loop: {str(e)}")
             self.ui.update_output(f"Error in research process: {str(e)}")
         finally:
             self.is_running = False
+
+    def _initialize_model(self):
+        """Initialize the Ollama model in a separate thread"""
+        try:
+            # Initialize Ollama model
+            if hasattr(self.llm, '_initialize_ollama'):
+                self.llm._initialize_ollama()
+            else:
+                raise Exception("LLM wrapper missing Ollama initialization method")
+        except Exception as e:
+            logger.error(f"Error initializing model: {str(e)}")
+            self.ui.update_output(f"Error initializing Ollama model: {str(e)}")
+
+    def _generate_initial_queries(self, original_query: str) -> List[str]:
+        """Generate initial search queries without using the model"""
+        # Extract key terms from the original query
+        words = original_query.lower().split()
+        key_terms = [word for word in words if word not in self.stop_words and len(word) > 2]
+        
+        # Generate combinations of key terms
+        queries = []
+        if len(key_terms) > 2:
+            # Use pairs of key terms
+            for i in range(len(key_terms) - 1):
+                queries.append(f"{key_terms[i]} {key_terms[i + 1]}")
+        else:
+            # Use the original query if it's short
+            queries.append(original_query)
+            
+        return queries[:3]  # Limit to top 3 queries
 
     def start_research(self, topic: str):
         """Start research with new session document"""
@@ -1123,10 +1199,18 @@ Research Progress:
         return self.is_running and self.research_thread and self.research_thread.is_alive()
 
     def terminate_research(self) -> str:
-        """Terminate research and return to main terminal"""
+        """Terminate research, cleanup GPU resources, and return to main terminal"""
         try:
             print("Initiating research termination...")
             sys.stdout.flush()
+
+            # Ensure LLM cleanup is called first to release GPU resources
+            if hasattr(self.llm, '_cleanup'):
+                try:
+                    self.llm._cleanup()
+                    print("GPU resources released successfully")
+                except Exception as e:
+                    logger.error(f"Error releasing GPU resources: {str(e)}")
 
             # Start progress indicator in a separate thread immediately
             indicator_thread = threading.Thread(target=self.show_progress_indicator)
@@ -1384,17 +1468,61 @@ Answer:
         """Get multiline input with CTRL+D handling for conversation mode"""
         buffer = []
 
-        # Save original terminal settings
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
+        if os.name == 'nt':
+            import msvcrt
+            current_line = []
+            while True:
+                if msvcrt.kbhit():
+                    char = msvcrt.getch().decode('utf-8')
+
+                    # CTRL+D detection
+                    if not char or ord(char) == 4:  # EOF or CTRL+D
+                        sys.stdout.write('\n')
+                        if current_line:
+                            buffer.append(''.join(current_line))
+                        return ' '.join(buffer).strip()
+
+                    # Handle special characters
+                    elif ord(char) == 13:  # Enter
+                        sys.stdout.write('\n')
+                        buffer.append(''.join(current_line))
+                        current_line = []
+
+                    elif ord(char) == 127:  # Backspace
+                        if current_line:
+                            current_line.pop()
+                            sys.stdout.write('\b \b')
+
+                    elif ord(char) == 3:  # CTRL+C
+                        sys.stdout.write('\n')
+                        return 'quit'
+
+                    # Normal character
+                    elif 32 <= ord(char) <= 126:  # Printable characters
+                        current_line.append(char)
+                        sys.stdout.write(char)
+
+                    sys.stdout.flush()
+        else:
+            # Save original terminal settings
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
 
         try:
-            # Set terminal to raw mode
-            tty.setraw(fd)
+            if os.name != 'nt':
+                # Set terminal to raw mode
+                tty.setraw(fd)
 
             current_line = []
             while True:
-                char = sys.stdin.read(1)
+                if os.name == 'nt':
+                    import msvcrt
+                    if msvcrt.kbhit():
+                        char = msvcrt.getch().decode('utf-8')
+                    else:
+                        continue
+                else:
+                    char = sys.stdin.read(1)
 
                 # CTRL+D detection
                 if not char or ord(char) == 4:  # EOF or CTRL+D
@@ -1424,16 +1552,16 @@ Answer:
                     sys.stdout.write(char)
 
                 sys.stdout.flush()
-
         finally:
-            # Restore terminal settings
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+            if os.name != 'nt':
+                # Restore terminal settings
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
             print()  # New line for clean display
 
 if __name__ == "__main__":
     from llm_wrapper import LLMWrapper
     from llm_response_parser import UltimateLLMResponseParser
-    from Self_Improving_Search import EnhancedSelfImprovingSearch
+    from parallax_pal import EnhancedSelfImprovingSearch
 
     try:
         print(f"{Fore.CYAN}Initializing Research System...{Style.RESET_ALL}")
