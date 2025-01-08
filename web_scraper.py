@@ -8,11 +8,15 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Optional, Set
 from duckduckgo_search import DDGS
+from dotenv import load_dotenv
 from llm_config import LLM_CONFIG_OLLAMA
 from tenacity import retry, stop_after_attempt, wait_exponential
 import mimetypes
 from collections import defaultdict
 from contextlib import contextmanager
+
+# Load environment variables first
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(
@@ -346,3 +350,6 @@ def can_fetch(url: str) -> bool:
     """Helper function to check if URL can be fetched"""
     with MultiSearcher() as scraper:
         return scraper._check_robots(url)
+
+# Export all necessary classes and functions
+__all__ = ['MultiSearcher', 'WebScraperError', 'get_web_content', 'can_fetch']

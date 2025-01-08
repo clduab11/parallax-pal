@@ -96,14 +96,51 @@ class EnhancedSelfImprovingSearch:
                     valid_results.append(result)
                 
                 if valid_results:
-                    # Log results for debugging
+                    # Create and display results table
+                    from rich.console import Console
+                    from rich.table import Table
+                    from rich.panel import Panel
+                    from rich.text import Text
+
+                    console = Console()
+                    
+                    # Create table with dynamic width
+                    table = Table(
+                        title="Search Results",
+                        expand=True,
+                        show_header=True,
+                        header_style="bold cyan"
+                    )
+                    
+                    # Add columns with flexible widths
+                    table.add_column("#", style="cyan", width=3)
+                    table.add_column("Title", style="blue")
+                    table.add_column("Source", style="green")
+                    table.add_column("Preview", style="white")
+                    
+                    # Add results to table
                     for i, result in enumerate(valid_results[:self.MAX_DISPLAY_RESULTS], 1):
                         snippet = self._create_snippet(result.get('body', 'No description'))
-                        logger.debug(
-                            f"{i}. {result['title']}\n"
-                            f"   URL: {result['href']}\n"
-                            f"   Snippet: {snippet}"
+                        url = result['href']
+                        source = url.split('/')[2].replace('www.', '')
+                        
+                        table.add_row(
+                            str(i),
+                            result['title'],
+                            source,
+                            snippet[:100] + "..." if len(snippet) > 100 else snippet
                         )
+                    
+                    # Create controls panel
+                    controls = Text()
+                    controls.append("\n🔍 ", style="yellow")
+                    controls.append("Controls: ", style="bold yellow")
+                    controls.append("'q' to quit, 'p' to pause\n", style="yellow")
+                    
+                    # Display results
+                    console.print("\n")
+                    console.print(Panel(table, border_style="cyan"))
+                    console.print(controls)
                     
                     logger.info(f"Found {len(valid_results)} valid results")
                     return valid_results[:self.MAX_DISPLAY_RESULTS]
@@ -249,6 +286,7 @@ class EnhancedSelfImprovingSearch:
             selected_urls = self.select_relevant_pages(results, query)
             if not selected_urls:
                 return self.synthesize_final_answer(query)
+
             # Scrape content
             scraped_content = self.scrape_content(selected_urls)
             
@@ -266,7 +304,6 @@ class EnhancedSelfImprovingSearch:
                 content_for_synthesis = self.format_scraped_content(scraped_content)
                 
             if not content_for_synthesis:
-                return self.synthesize_final_answer(query)
                 return self.synthesize_final_answer(query)
             
             # Generate synthesis prompt

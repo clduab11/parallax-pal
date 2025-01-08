@@ -119,41 +119,111 @@ def main():
         search_engine = EnhancedSelfImprovingSearch(llm, parser)
         manager = ResearchManager(llm, parser, search_engine)
         
-        console.print("[green]ParallaxPal initialized successfully![/green]")
-        console.print("[yellow]Press 'g' at any time to toggle GPU acceleration[/yellow]")
-        console.print("[cyan]Enter your research query (starting with @):[/cyan]")
+        # Get console width for panel sizing
+        console_width = console.width or 80
+        panel_width = min(max(60, console_width - 4), 120)  # Keep width between 60 and 120 chars
+
+        # Create welcome message with dynamic width
+        welcome_text = Text()
+        welcome_text.append("🤖 Welcome to ParallaxPal - Your AI Research Companion\n\n", style="bright_white")
+        welcome_text.append("🎮 Controls:\n", style="cyan")
+        welcome_text.append("• 'g' - Toggle GPU acceleration\n", style="yellow")
+        welcome_text.append("• 'q' - Quit current research (saves progress)\n", style="yellow")
+        welcome_text.append("• 'p' - Pause research and assess progress\n", style="yellow")
+        welcome_text.append("• 's' - Show current research status\n\n", style="yellow")
+        welcome_text.append("📝 Query Format:\n", style="cyan")
+        welcome_text.append("• Start with @ for continuous research mode\n")
+        welcome_text.append("• Regular query for single iteration mode\n\n")
+        welcome_text.append("🚀 System is ready! Enter your research query...", style="green")
+
+        # Display welcome message and controls with enhanced styling and dynamic width
+        welcome_panel = Panel(
+            welcome_text,
+            title="[bold cyan]🔍 ParallaxPal Controls[/bold cyan]",
+            border_style="cyan",
+            padding=(1, 2),
+            width=panel_width
+        )
+        console.print(welcome_panel)
         
         try:
-            # Start keyboard listener thread
-            def check_keyboard():
+            while True:
+                # Handle keyboard input character by character
+                query = ""
+                print(f"{Fore.GREEN}📝 Enter your research query (Press Enter to submit):{Style.RESET_ALL}")
                 while True:
                     if msvcrt.kbhit():
-                        key = msvcrt.getch().decode().lower()
-                        if key == 'g':
-                            llm.toggle_gpu()
+                        char = msvcrt.getch()
+                        # Check for Enter key (carriage return)
+                        if char in [b'\r', b'\n']:
+                            print()  # Move to next line
+                            break
+                        # Check for backspace
+                        elif char == b'\x08':
+                            if query:
+                                query = query[:-1]
+                                # Clear the last character from console
+                                print('\b \b', end='', flush=True)
+                        # Check for special keys only when no query is being typed
+                        elif not query and char.decode(errors='ignore').lower() == 'g':
+                            print("\nToggling GPU acceleration...")
+                            if llm.toggle_gpu():
+                                print(f"{Fore.GREEN}GPU settings updated successfully{Style.RESET_ALL}")
+                            print(f"{Fore.GREEN}📝 Enter your research query (Press Enter to submit):{Style.RESET_ALL}")
+                        # Regular character input
+                        elif char.isascii():
+                            query += char.decode()
+                            print(char.decode(), end='', flush=True)
 
-            keyboard_thread = threading.Thread(target=check_keyboard, daemon=True)
-            keyboard_thread.start()
-
-            while True:
-                query = input().strip()
-                if query.lower() == 'g':
-                    llm.toggle_gpu()
-                    console.print("[cyan]Enter your research query (optionally start with @ for continuous mode):[/cyan]")
-                    continue
+                query = query.strip()
                 
                 continuous_mode = query.startswith('@')
                 if continuous_mode:
                     query = query[1:]  # Remove @ prefix
                 
+                # Start research and handle summary display
                 manager.start_research(query, continuous_mode)
+                
+                # Get and display the research summary
+                console.print("\n🔄 [cyan]Synthesizing research findings...[/cyan]")
+                summary = manager.terminate_research()
+                
+                if summary:
+                    # Create a styled panel for the summary
+                    summary_panel = Panel(
+                        Text(summary, style="bright_white"),
+                        title="[bold cyan]📊 Research Summary[/bold cyan]",
+                        border_style="cyan",
+                        padding=(1, 2)
+                    )
+                    console.print(summary_panel)
+                
+                # Ask if user wants to start a new research session
+                if questionary.confirm("Would you like to start a new research session?").ask():
+                    continue
                 break
             
         except KeyboardInterrupt:
-            console.print("\n[yellow]Operation cancelled by user[/yellow]")
+            console.print("\n[yellow]Research interrupted - Generating final summary...[/yellow]")
+            try:
+                summary = manager.terminate_research()
+                if summary:
+                    console.print(Panel(
+                        Text(summary, style="bright_white"),
+                        title="[bold yellow]Final Summary (Interrupted)[/bold yellow]",
+                        border_style="yellow",
+                        padding=(1, 2)
+                    ))
+            except Exception as e:
+                logger.error(f"Error generating final summary: {str(e)}")
+                console.print("[red]Could not generate final summary[/red]")
         except Exception as e:
             logger.error(f"Error during research: {str(e)}")
-            console.print(f"[red]An error occurred: {str(e)}[/red]")
+            console.print(Panel(
+                f"[red]An error occurred during research:[/red]\n{str(e)}",
+                title="[bold red]Error[/bold red]",
+                border_style="red"
+            ))
             
     except Exception as e:
         logger.error(f"Critical error in main: {str(e)}")

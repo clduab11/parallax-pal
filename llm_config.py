@@ -2,6 +2,10 @@
 
 import os
 from typing import Dict, Any
+from dotenv import load_dotenv
+
+# Load environment variables first
+load_dotenv()
 
 def validate_api_configs(search_apis: Dict[str, Any]) -> None:
     """Validate that enabled search APIs have their required API keys configured."""

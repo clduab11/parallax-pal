@@ -262,39 +262,46 @@ class LLMWrapper:
                 perf_info = ''
                 
             print(f"{Fore.YELLOW}{i}{Style.RESET_ALL}. {model} {size_info} {quant_info} {perf_info}")
-        
-        import msvcrt
+
         while True:
-            sys.stdout.write(f"\n{Fore.GREEN}Enter model number (1-{len(self.available_models)}): {Style.RESET_ALL}")
-            sys.stdout.flush()
-            
-            # Read input character by character
-            choice = ""
-            while True:
-                if msvcrt.kbhit():
-                    char = msvcrt.getch().decode()
-                    if char == '\r':  # Enter key
-                        print()  # New line after input
-                        break
-                    elif char.isdigit():
-                        choice += char
-                        sys.stdout.write(char)
-                        sys.stdout.flush()
-            
-            if not choice:  # Handle empty input
-                continue
-                
             try:
-                choice = int(choice)
-                if 1 <= choice <= len(self.available_models):
-                    self.model_name = self.available_models[choice - 1]
+                if os.name == 'nt':  # Windows
+                    import msvcrt
+                    sys.stdout.write(f"\n{Fore.GREEN}Enter model number (1-{len(self.available_models)}): {Style.RESET_ALL}")
+                    sys.stdout.flush()
+                    
+                    # Read input character by character
+                    choice = ""
+                    while True:
+                        if msvcrt.kbhit():
+                            char = msvcrt.getch().decode()
+                            if char == '\r':  # Enter key
+                                print()  # New line after input
+                                break
+                            elif char.isdigit():
+                                choice += char
+                                sys.stdout.write(char)
+                                sys.stdout.flush()
+                else:  # Unix-like systems
+                    sys.stdout.write(f"\n{Fore.GREEN}Enter model number (1-{len(self.available_models)}): {Style.RESET_ALL}")
+                    sys.stdout.flush()
+                    choice = input().strip()
+
+                if not choice:  # Handle empty input
+                    continue
+
+                choice_num = int(choice)
+                if 1 <= choice_num <= len(self.available_models):
+                    self.model_name = self.available_models[choice_num - 1]
                     print(f"\n{Fore.GREEN}Selected model: {self.model_name}{Style.RESET_ALL}")
                     break
                 else:
                     print(f"{Fore.RED}Invalid choice. Please enter a number between "
-                           f"1 and {len(self.available_models)}{Style.RESET_ALL}")
+                          f"1 and {len(self.available_models)}{Style.RESET_ALL}")
             except ValueError:
                 print(f"{Fore.RED}Invalid input. Please enter a number.{Style.RESET_ALL}")
+            except (KeyboardInterrupt, EOFError):
+                print(f"\n{Fore.YELLOW}Input cancelled, please try again{Style.RESET_ALL}")
 
     @retry(
         stop=stop_after_attempt(3),
@@ -302,7 +309,7 @@ class LLMWrapper:
         reraise=True
     )
     def generate(self, prompt: str, **kwargs) -> str:
-        """Generate text using Ollama with retries and proper error handling"""
+        """Generate text using Ollama with enhanced error handling and timeout management"""
         if not self._initialized:
             self.initialize()
 
@@ -312,22 +319,47 @@ class LLMWrapper:
             if approx_tokens > self.llm_config.get('n_ctx', 4096):
                 raise LLMError(f"Prompt too long (approximately {approx_tokens} tokens)")
 
-            response = self._session.post(
-                f"{self.base_url}/api/generate",
-                json={
-                    "model": self.model_name,
-                    "prompt": prompt,
-                    "stream": False,
-                    **kwargs
-                },
-                timeout=self.llm_config.get('timeout', 30)
-            )
-            response.raise_for_status()
-            return response.json()['response']
+            # Calculate dynamic timeout based on prompt length
+            base_timeout = self.llm_config.get('timeout', 30)
+            dynamic_timeout = max(base_timeout, approx_tokens / 20)  # ~20 tokens per second processing
+            
+            # Add progress indicator for long generations
+            if dynamic_timeout > 30:
+                print(f"{Fore.YELLOW}Processing large prompt ({approx_tokens} tokens), this may take a moment...{Style.RESET_ALL}")
+
+            try:
+                response = self._session.post(
+                    f"{self.base_url}/api/generate",
+                    json={
+                        "model": self.model_name,
+                        "prompt": prompt,
+                        "stream": False,
+                        **kwargs
+                    },
+                    timeout=dynamic_timeout
+                )
+                response.raise_for_status()
+                return response.json()['response']
+
+            except requests.exceptions.Timeout:
+                # Specific handling for timeout errors
+                error_msg = f"Generation timed out after {dynamic_timeout}s. The prompt may be too complex."
+                logger.error(error_msg)
+                raise LLMError(error_msg)
+
+            except requests.exceptions.ConnectionError:
+                # Handle connection issues
+                error_msg = "Connection to Ollama server failed. Please check if the server is running."
+                logger.error(error_msg)
+                raise LLMError(error_msg)
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Network error during generation: {str(e)}")
             raise LLMError(f"Network error: {str(e)}")
+        except json.JSONDecodeError:
+            error_msg = "Invalid response from Ollama server"
+            logger.error(error_msg)
+            raise LLMError(error_msg)
         except Exception as e:
             logger.error(f"Error generating text: {str(e)}")
             raise LLMError(f"Generation failed: {str(e)}")

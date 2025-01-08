@@ -26,8 +26,8 @@ choco install git python docker-desktop
 
 ### 3. Clone the Repository
 ```powershell
-git clone https://github.com/TheBlewish/Automated-AI-Web-Researcher-Ollama
-cd Automated-AI-Web-Researcher-Ollama
+git clone https://github.com/clduab11/parallax-pal
+cd parallax-pal
 ```
 
 ### 4. Set Up Virtual Environment
@@ -53,20 +53,16 @@ pip install -r requirements.txt
 ```powershell
 docker run -d -p 11434:11434 --name ollama ollama/ollama
 ```
-3. Verify connection:
+3. Pull your preferred model:
 ```powershell
-curl http://localhost:11434
+docker exec -it ollama ollama pull llama2
+```
+4. Verify Ollama is accessible:
+```powershell
+curl http://host.docker.internal:11434/api/tags
 ```
 
-### 8. Windows-Specific Configuration
-Edit `llm_config.py`:
-```python
-LLM_CONFIG_OLLAMA = {
-    "llm_type": "ollama",
-    "base_url": "http://localhost:11434",  # Changed from host.docker.internal
-    # ... rest of config
-}
-```
+Note: The application is designed to work with Ollama at http://host.docker.internal:11434. This URL is correct and should not be changed to localhost, as it ensures proper communication between the application and the Ollama container.
 
 ## Running the Application
 
@@ -75,9 +71,9 @@ LLM_CONFIG_OLLAMA = {
 venv\Scripts\activate
 ```
 
-2. Start the application:
+2. Start the application using the batch file:
 ```powershell
-python Web-LLM.py
+.\run-parallax.bat
 ```
 
 ## Known Limitations
@@ -110,6 +106,14 @@ $env:TERM = 'xterm-256color'
 **Issue**: Docker connection problems
 - Solution: Verify Docker Desktop is running
 - Check WSL integration settings
+- Ensure Ollama container is running:
+```powershell
+docker ps | findstr ollama
+```
+- Test Ollama connection:
+```powershell
+curl http://host.docker.internal:11434/api/tags
+```
 
 **Issue**: Virtual environment activation fails
 - Solution: Run PowerShell as Administrator

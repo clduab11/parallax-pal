@@ -465,8 +465,8 @@ class TerminalUI:
             self.thinking = False
             self.research_paused = False
 
-    def _refresh_input_prompt(self, prompt="Enter command: "):
-        """Refresh the fixed input prompt at bottom with display fix"""
+    def _refresh_input_prompt(self):
+        """Refresh the input area with no prompt"""
         if not self.is_setup:
             return
 
@@ -476,10 +476,10 @@ class TerminalUI:
 
             # Calculate proper cursor position
             cursor_y = 0
-            cursor_x = len(prompt) + len(self.input_buffer)
+            cursor_x = len(self.input_buffer)
 
-            # Add the prompt and buffer
-            self.input_win.addstr(0, 0, f"{prompt}{self.input_buffer}", curses.color_pair(1))
+            # Add the buffer without prompt
+            self.input_win.addstr(0, 0, self.input_buffer, curses.color_pair(1))
 
             # Position cursor correctly
             try:
@@ -529,11 +529,9 @@ class TerminalUI:
         except curses.error:
             pass
 
-    def get_input(self, prompt: Optional[str] = None) -> Optional[str]:
-        """Enhanced input handling with mouse scroll support"""
+    def get_input(self) -> Optional[str]:
+        """Enhanced input handling with no prompt"""
         try:
-            if prompt:
-                self.update_status(prompt)
             if not self.is_setup:
                 self.setup()
             self.input_buffer = ""
@@ -860,18 +858,60 @@ Do not provide any additional information or explanation, note that the time ran
                 f.flush()
 
     def add_to_document(self, content: str, source_url: str, focus_area: str):
-        """Add research findings to current session document"""
+        """Add research findings to current session document with enhanced table format"""
         try:
             with open(self.document_path, 'a', encoding='utf-8') as f:
                 if source_url not in self.searched_urls:
-                    f.write(f"\n{'='*80}\n")
-                    f.write(f"Research Focus: {focus_area}\n")
-                    f.write(f"Source: {source_url}\n")
-                    f.write(f"Content:\n{content}\n")
-                    f.write(f"{'='*80}\n")
+                    # Parse URL for title
+                    parsed_url = urlparse(source_url)
+                    title = parsed_url.path.split('/')[-1].replace('-', ' ').replace('_', ' ').title()
+                    if not title or title.isspace():
+                        title = parsed_url.netloc
+
+                    # Create shortened URL in hyperlink format
+                    short_url = f"[Link]({source_url})"
+
+                    # Format content preview with relevant snippets
+                    content_preview = content.replace('\n', ' ')
+                    # Try to find most relevant snippet based on focus area keywords
+                    keywords = focus_area.lower().split()
+                    best_snippet = ""
+                    max_relevance = 0
+                    
+                    # Split content into sentences and find most relevant one
+                    sentences = re.split(r'[.!?]+', content_preview)
+                    for sentence in sentences:
+                        relevance = sum(1 for keyword in keywords if keyword in sentence.lower())
+                        if relevance > max_relevance:
+                            max_relevance = relevance
+                            best_snippet = sentence.strip()
+                    
+                    if not best_snippet:  # If no relevant snippet found, use first part
+                        best_snippet = content_preview[:150]
+                    
+                    content_preview = best_snippet[:150] + "..."
+
+                    # Format table header if this is first entry
+                    if len(self.searched_urls) == 0:
+                        f.write("\n🔍 Top Sources Analysis:\n")
+                        f.write("\n┌" + "─"*30 + "┬" + "─"*25 + "┬" + "─"*30 + "┬" + "─"*60 + "┐\n")
+                        f.write("│ Title                         │ Source                  │ URL                           │ Context                                                   │\n")
+                        f.write("├" + "─"*30 + "┼" + "─"*25 + "┼" + "─"*30 + "┼" + "─"*60 + "┤\n")
+
+                    # Write table row
+                    f.write(f"│ {title[:28]:<28} │ {parsed_url.netloc[:23]:<23} │ {short_url[:28]:<28} │ {content_preview[:58]:<58} │\n")
+                    
+                    # Add separator line between entries
+                    f.write("├" + "─"*30 + "┼" + "─"*25 + "┼" + "─"*30 + "┼" + "─"*60 + "┤\n")
+                    
+                    # Add synthesis message after every 5 sources
+                    if len(self.searched_urls) % 5 == 0:
+                        f.write("└" + "─"*30 + "┴" + "─"*25 + "┴" + "─"*30 + "┴" + "─"*60 + "┘\n")
+                        f.write("\n🤖 Synthesizing information from gathered sources...\n\n")
+                    
                     f.flush()
                     self.searched_urls.add(source_url)
-                    self.ui.update_output(f"Added content from: {source_url}")
+                    self.ui.update_output(f"📚 Added source: {title}")
         except Exception as e:
             logger.error(f"Error adding to document: {str(e)}")
             self.ui.update_output(f"Error saving content: {str(e)}")
@@ -959,26 +999,145 @@ Do not provide any additional information or explanation, note that the time ran
             self.should_terminate.set()
 
     def _research_loop(self):
-        """Main research loop for continuous mode"""
+        """Main research loop with detailed progress updates"""
+        from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+        from rich.console import Console
+        from rich.panel import Panel
+        
+        console = Console()
         self.is_running = True
+        
         try:
             self.research_started.set()
             
-            # Start model initialization in background
-            model_init_thread = threading.Thread(target=self._initialize_model, daemon=True)
-            model_init_thread.start()
-            self.ui.update_output("\nInitializing AI model in background...")
-
-            while not self.should_terminate.is_set() and not self.shutdown_event.is_set():
-                if self.research_paused:
-                    time.sleep(1)
-                    continue
-
-                self.ui.update_output("\nProcessing search results first...")
-
-                # Generate initial search queries without model
-                initial_queries = self._generate_initial_queries(self.original_query)
-                all_scraped_content = {}
+            # Create progress display
+            progress = Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TimeElapsedColumn(),
+                console=console,
+                transient=True
+            )
+            
+            with progress:
+                # Model initialization task
+                init_task = progress.add_task("Initializing AI model...", total=None)
+                model_init_thread = threading.Thread(target=self._initialize_model, daemon=True)
+                model_init_thread.start()
+                
+                while not self.should_terminate.is_set() and not self.shutdown_event.is_set():
+                    if self.research_paused:
+                        time.sleep(1)
+                        continue
+                    
+                    # Search processing task
+                    search_task = progress.add_task("Processing search queries...", total=100)
+                    progress.update(search_task, advance=20)
+                    
+                    # Generate initial search queries without model
+                    initial_queries = self._generate_initial_queries(self.original_query)
+                    all_scraped_content = {}
+                    progress.update(search_task, advance=20)
+                    
+                    # Process search results
+                    for query in initial_queries:
+                        if self.should_terminate.is_set():
+                            break
+                            
+                        try:
+                            progress.update(search_task,
+                                         description=f"🔍 Searching: {query}")
+                            results = self.search_engine.perform_search(query, time_range='none')
+                            
+                            if results:
+                                progress.update(search_task,
+                                             description=f"📊 Found {len(results)} results, analyzing relevance...")
+                                selected_urls = self.search_engine.select_relevant_pages(results, query)
+                                
+                                if selected_urls:
+                                    progress.update(search_task,
+                                                 description=f"⚙️ Processing {len(selected_urls)} relevant pages...")
+                                    scraped_content = self.search_engine.scrape_content(selected_urls)
+                                    
+                                    if scraped_content:
+                                        all_scraped_content.update(scraped_content)
+                                        progress.update(search_task,
+                                                     description=f"✅ Successfully processed {len(scraped_content)} pages")
+                                    else:
+                                        progress.update(search_task,
+                                                     description="⚠️ No content could be extracted")
+                                else:
+                                    progress.update(search_task,
+                                                 description="⚠️ No relevant pages found in results")
+                            else:
+                                progress.update(search_task,
+                                             description=f"⚠️ No results found for: {query}")
+                                        
+                        except Exception as e:
+                            logger.error(f"Error in search: {str(e)}")
+                            console.print(f"[red]Error during search: {str(e)}[/red]")
+                    
+                    progress.update(search_task, completed=True)
+                    
+                    # Wait for model initialization
+                    progress.update(init_task, description="Waiting for AI model initialization...")
+                    model_init_thread.join()
+                    progress.update(init_task, completed=True)
+                    
+                    # Analysis task
+                    analysis_task = progress.add_task("Analyzing collected information...", total=100)
+                    analysis_result = self.strategic_parser.strategic_analysis(self.original_query)
+                    progress.update(analysis_task, advance=50)
+                    
+                    if not analysis_result:
+                        console.print("[yellow]Failed to generate analysis result. Retrying...[/yellow]")
+                        progress.update(analysis_task, completed=True)
+                        continue
+                        
+                    focus_areas = analysis_result.focus_areas
+                    if not focus_areas:
+                        console.print("[yellow]No valid focus areas generated. Retrying...[/yellow]")
+                        progress.update(analysis_task, completed=True)
+                        continue
+                        
+                    progress.update(analysis_task, completed=True)
+                    
+                    # Process focus areas
+                    console.print(f"\n[cyan]Generated {len(focus_areas)} research areas:[/cyan]")
+                    for i, focus in enumerate(focus_areas, 1):
+                        console.print(f"\n[blue]Area {i}: {focus.area}[/blue]")
+                        console.print(f"[green]Priority: {focus.priority}[/green]")
+                        
+                    # Content processing task
+                    content_task = progress.add_task("Processing research content...", total=len(focus_areas))
+                    
+                    for focus_area in focus_areas:
+                        if self.should_terminate.is_set():
+                            break
+                            
+                        while self.research_paused and not self.should_terminate.is_set():
+                            time.sleep(1)
+                            
+                        if self.should_terminate.is_set():
+                            break
+                            
+                        self.current_focus = focus_area
+                        progress.update(content_task, description=f"Analyzing content for: {focus_area.area}")
+                        
+                        # Add relevant content to document
+                        for url, content in all_scraped_content.items():
+                            if url not in self.searched_urls:
+                                self.add_to_document(content, url, focus_area.area)
+                                
+                        progress.update(content_task, advance=1)
+                        
+                        if self.check_document_size():
+                            console.print("\n[yellow]Document size limit reached. Finalizing research.[/yellow]")
+                            return
+                            
+                    progress.update(content_task, completed=True)
+                    console.print("\n[green]All focus areas processed. Starting next iteration...[/green]")
 
                 # Process search results first
                 for query in initial_queries:
@@ -1005,46 +1164,113 @@ Do not provide any additional information or explanation, note that the time ran
                 self.ui.update_output("\nWaiting for AI model initialization to complete...")
                 model_init_thread.join()
 
-                # Now use the model with collected search results
-                self.ui.update_output("\nAnalyzing collected information...")
-                analysis_result = self.strategic_parser.strategic_analysis(self.original_query)
-
-                if not analysis_result:
-                    self.ui.update_output("\nFailed to generate analysis result. Retrying...")
-                    continue
-
-                focus_areas = analysis_result.focus_areas
-                if not focus_areas:
-                    self.ui.update_output("\nNo valid focus areas generated. Retrying...")
-                    continue
-
-                self.ui.update_output(f"\nGenerated {len(focus_areas)} research areas:")
-                for i, focus in enumerate(focus_areas, 1):
-                    self.ui.update_output(f"\nArea {i}: {focus.area}")
-                    self.ui.update_output(f"Priority: {focus.priority}")
+                # Analysis phase with progress tracking
+                from rich.progress import Progress, SpinnerColumn, TextColumn
+                from rich.console import Console
+                from rich.panel import Panel
+                
+                console = Console()
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    console=console,
+                    transient=True
+                ) as progress:
+                    # Analysis task
+                    analysis_task = progress.add_task("Analyzing research data...", total=100)
+                    
+                    # Attempt analysis with retries
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        progress.update(analysis_task,
+                                      description=f"Analyzing collected information (Attempt {attempt + 1}/{max_retries})...")
+                        
+                        analysis_result = self.strategic_parser.strategic_analysis(self.original_query)
+                        progress.update(analysis_task, advance=30)
+                        
+                        if not analysis_result:
+                            if attempt < max_retries - 1:
+                                console.print(Panel("Analysis failed, retrying...",
+                                                  border_style="yellow"))
+                                continue
+                            break
+                            
+                        focus_areas = analysis_result.focus_areas
+                        if not focus_areas:
+                            if attempt < max_retries - 1:
+                                console.print(Panel("No focus areas generated, retrying...",
+                                                  border_style="yellow"))
+                                continue
+                            break
+                            
+                        # Success - display results
+                        progress.update(analysis_task, completed=True)
+                        console.print(Panel(f"Generated {len(focus_areas)} research areas:",
+                                          border_style="green"))
+                        
+                        for i, focus in enumerate(focus_areas, 1):
+                            console.print(f"[cyan]Area {i}:[/cyan] {focus.area}")
+                            console.print(f"[green]Priority:[/green] {focus.priority}\n")
+                        
+                        break
 
                 # Process focus areas with collected content
-                for focus_area in focus_areas:
-                    if self.should_terminate.is_set():
-                        break
+                content_progress = Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    console=console,
+                    transient=True
+                )
+                
+                with content_progress:
+                    process_task = content_progress.add_task(
+                        "Processing focus areas...",
+                        total=len(focus_areas)
+                    )
+                    
+                    for focus_area in focus_areas:
+                        if self.should_terminate.is_set():
+                            break
 
-                    while self.research_paused and not self.should_terminate.is_set():
-                        time.sleep(1)
+                        while self.research_paused and not self.should_terminate.is_set():
+                            content_progress.update(
+                                process_task,
+                                description="Research paused... Press 'p' to resume"
+                            )
+                            time.sleep(1)
 
-                    if self.should_terminate.is_set():
-                        break
+                        if self.should_terminate.is_set():
+                            break
 
-                    self.current_focus = focus_area
-                    self.ui.update_output(f"\nAnalyzing content for: {focus_area.area}")
+                        self.current_focus = focus_area
+                        content_progress.update(
+                            process_task,
+                            description=f"Processing focus area: {focus_area.area}"
+                        )
 
-                    # Add relevant content to document based on focus area
-                    for url, content in all_scraped_content.items():
-                        if url not in self.searched_urls:
-                            self.add_to_document(content, url, focus_area.area)
+                        # Add content processing subtask
+                        url_task = content_progress.add_task(
+                            "Processing URLs...",
+                            total=len(all_scraped_content)
+                        )
 
-                    if self.check_document_size():
-                        self.ui.update_output("\nDocument size limit reached. Finalizing research.")
-                        return
+                        for url, content in all_scraped_content.items():
+                            if url not in self.searched_urls:
+                                content_progress.update(
+                                    url_task,
+                                    description=f"Processing: {url[:40]}..."
+                                )
+                                self.add_to_document(content, url, focus_area.area)
+                                content_progress.update(url_task, advance=1)
+
+                        content_progress.update(process_task, advance=1)
+
+                        if self.check_document_size():
+                            console.print(Panel(
+                                "Document size limit reached. Finalizing research.",
+                                border_style="yellow"
+                            ))
+                            return
 
                 self.ui.update_output("\nAll focus areas processed. Starting next iteration...")
 
@@ -1123,12 +1349,12 @@ Do not provide any additional information or explanation, note that the time ran
                 return
 
             while not self.should_terminate.is_set():
-                cmd = self.ui.get_input("Enter command: ")
+                cmd = self.ui.get_input()  # Removed prompt
                 if cmd is None or self.shutdown_event.is_set():
                     if self.should_terminate.is_set() and not self.research_complete:
-                        self.ui.update_output("\nGenerating research summary... please wait...")
+                        self.ui.update_output("\n🔄 Generating research summary... please wait...")
                         summary = self.terminate_research()
-                        self.ui.update_output("\nFinal Research Summary:")
+                        self.ui.update_output("\n📊 Final Research Summary:")
                         self.ui.update_output(summary)
                     break
                 if cmd:
@@ -1284,23 +1510,87 @@ Research Progress:
         return self.is_running and self.research_thread and self.research_thread.is_alive()
 
     def terminate_research(self) -> str:
-        """Terminate research, cleanup GPU resources, and return to main terminal"""
+        """Terminate research with live updates and scrollable output"""
         try:
-            print("Initiating research termination...")
-            sys.stdout.flush()
+            from rich.live import Live
+            from rich.panel import Panel
+            from rich.progress import Progress, SpinnerColumn, TextColumn
+            from rich.console import Console
+            from rich.text import Text
+            
+            console = Console()
+            
+            # Create progress display
+            progress = Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+                transient=True
+            )
+            
+            # Create live display for updates
+            with Live(console=console, refresh_per_second=4) as live:
+                # Show initial status
+                live.update(Panel("Initiating research termination...", border_style="yellow"))
+                
+                with progress:
+                    # Add progress tasks
+                    cleanup_task = progress.add_task("Cleaning up resources...", total=None)
+                    summary_task = progress.add_task("Generating final summary...", total=None)
+                    
+                    # Generate summary with live updates
+                    summary = ""
+                    try:
+                        if os.path.exists(self.document_path):
+                            with open(self.document_path, 'r', encoding='utf-8') as f:
+                                content = f.read().strip()
+                                if content:
+                                    # Update progress
+                                    progress.update(summary_task, description="Analyzing research data...")
+                                    
+                                    # Generate summary
+                                    summary_prompt = self._create_summary_prompt(content)
+                                    summary = self.llm.generate(summary_prompt, max_tokens=4000)
+                                    
+                                    # Format summary with rich text
+                                    formatted_summary = Text()
+                                    formatted_summary.append("\n" + "="*80 + "\n", style="cyan")
+                                    formatted_summary.append("RESEARCH SUMMARY\n", style="bold cyan")
+                                    formatted_summary.append("="*80 + "\n\n", style="cyan")
+                                    formatted_summary.append(f"Original Query: {self.original_query}\n", style="yellow")
+                                    formatted_summary.append(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n", style="dim")
+                                    formatted_summary.append(summary + "\n\n", style="white")
+                                    formatted_summary.append("="*80 + "\n", style="cyan")
+                                    formatted_summary.append("End of Summary\n", style="bold cyan")
+                                    formatted_summary.append("="*80 + "\n", style="cyan")
+                                    
+                                    # Update live display with summary
+                                    live.update(Panel(formatted_summary, border_style="cyan"))
+                                    
+                                    # Write to document
+                                    with open(self.document_path, 'a', encoding='utf-8') as f:
+                                        f.write("\n\n" + str(formatted_summary))
+                    except Exception as e:
+                        logger.error(f"Error generating summary: {str(e)}")
+                        live.update(Panel(f"Error generating summary: {str(e)}", border_style="red"))
+                        return f"Error generating summary: {str(e)}"
+                    
+                    # Cleanup GPU resources
+                    progress.update(cleanup_task, description="Releasing GPU resources...")
+                    if hasattr(self.llm, '_cleanup'):
+                        try:
+                            self.llm._cleanup()
+                            progress.update(cleanup_task, description="GPU resources released successfully")
+                        except Exception as e:
+                            logger.error(f"Error releasing GPU resources: {str(e)}")
+                            progress.update(cleanup_task, description=f"Error releasing GPU resources: {str(e)}")
+                    
+                    return summary
 
-            # Ensure LLM cleanup is called first to release GPU resources
-            if hasattr(self.llm, '_cleanup'):
-                try:
-                    self.llm._cleanup()
-                    print("GPU resources released successfully")
-                except Exception as e:
-                    logger.error(f"Error releasing GPU resources: {str(e)}")
-
-            # Start progress indicator in a separate thread immediately
-            indicator_thread = threading.Thread(target=self.show_progress_indicator)
-            indicator_thread.daemon = True
-            indicator_thread.start()
+        except Exception as e:
+            error_msg = f"Error generating summary: {str(e)}"
+            logger.error(error_msg)
+            return error_msg
 
             if not os.path.exists(self.document_path):
                 self.summary_ready = True
@@ -1402,15 +1692,26 @@ Research Progress:
             self.ui.cleanup()
 
     def show_thinking_indicator(self, message: str, stop_flag_name: str):
-        """Show a rotating thinking indicator with custom message"""
-        symbols = ['|', '/', '-', '\\']
+        """Show an enhanced thinking indicator with custom message"""
+        spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        messages = {
+            'thinking': 'Analyzing',
+            'scraping': 'Scraping',
+            'processing': 'Processing'
+        }
+        
         idx = 0
-        while getattr(self, stop_flag_name):  # Use dynamic attribute lookup
-            sys.stdout.write(f"\r{message} {symbols[idx]}")
+        dots = 0
+        while getattr(self, stop_flag_name):
+            current_message = messages.get(message.lower().split()[0], message)
+            dots_str = '.' * dots + ' ' * (3 - dots)
+            display = f"\r{spinner[idx]} {current_message}{dots_str}"
+            sys.stdout.write(display)
             sys.stdout.flush()
-            idx = (idx + 1) % len(symbols)
-            time.sleep(0.2)
-        sys.stdout.write("\r" + " " * (len(message) + 2) + "\r")  # Clear the line when done
+            idx = (idx + 1) % len(spinner)
+            dots = (dots + 1) % 4
+            time.sleep(0.1)
+        sys.stdout.write("\r" + " " * (len(display)) + "\r")  # Clear the line when done
 
     def start_conversation_mode(self):
         """Start interactive conversation mode with CTRL+D input handling and thinking indicator"""
