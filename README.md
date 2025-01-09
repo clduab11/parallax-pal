@@ -27,7 +27,7 @@ Parallax Pal is an advanced AI research assistant that transforms complex resear
 
 ## Pricing & Licensing 💡
 
-Parallax Pal offers flexible licensing options to suit various research and commercial needs:
+Parallax Pal offers flexible licensing options to suit various research and commercial needs: (DRAFT - IN WORKSHOPPING)
 
 ### Subscription Tiers
 
