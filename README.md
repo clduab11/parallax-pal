@@ -1,134 +1,260 @@
-# Parallax Pal: AI-Powered Research Assistant 🔍
+# Parallax Pal
 
-## Overview
+A production-ready research and analytics platform that transforms raw data into actionable insights. Originally a CLI tool, now evolved into a scalable web application with real-time research capabilities and analytics integration.
 
-Parallax Pal is an advanced AI research assistant that transforms complex research queries into structured, comprehensive insights. Unlike traditional chatbots, this tool methodically breaks down research questions, explores web sources, and synthesizes findings with unprecedented depth and precision.
+## Features
 
-## How Parallax Pal Works 🧠
+### Core Platform
+- FastAPI-based REST API with async processing
+- React/TypeScript frontend with real-time updates
+- PostgreSQL database with connection pooling
+- Redis caching for enhanced performance
+- Asynchronous research task processing
+- Real-time research progress updates
+- Integration with Parallax Analytics platform
 
-1. **Input Research Query**: Provide a complex question or research topic
-2. **Automated Analysis**: AI breaks down the query into focused research areas
-3. **Web Exploration**: 
-   - Generates targeted search queries
-   - Retrieves and analyzes relevant web pages
-   - Extracts key information systematically
-4. **Knowledge Synthesis**: Compiles findings into a structured research document
-5. **Continuous Refinement**: Iteratively explores new research angles
+### Security & Authentication
+- JWT-based authentication
+- Role-based access control (RBAC)
+- Rate limiting and DoS protection
+- CORS protection
+- SQL injection prevention
+- XSS protection
+- CSRF protection
+- Secure password hashing
 
-## Key Features 🚀
+### Monitoring & Performance
+- Prometheus metrics integration
+- Structured JSON logging
+- Health check endpoints
+- Connection pool management
+- Query performance monitoring
+- Real-time system metrics
+- Error tracking and reporting
 
-- **Intelligent Research Planning**: Automatically creates prioritized research focus areas
-- **Systematic Web Exploration**: Performs targeted searches and content extraction
-- **Comprehensive Documentation**: Generates detailed research documents with source URLs
-- **Adaptive Learning**: Continuously refines research approach based on discovered information
-- **Interactive Q&A**: Enables in-depth exploration of research findings
+### Quality & Testing
+- Comprehensive test coverage
+- End-to-end testing suite
+- Integration tests
+- Unit testing for all components
+- Performance benchmarking
+- Security vulnerability scanning
+- Load testing capabilities
 
+## Architecture
 
-
-## Pricing & Licensing 💡
-
-Parallax Pal offers flexible licensing options to suit various research and commercial needs: (DRAFT - IN WORKSHOPPING)
-
-### Subscription Tiers
-
-1. **Free Tier**: $0/month
-   - Limited to 100 research queries per month
-   - Limited to 3 continous research queries; output limited to 3 search iterations per query
-   - Preset/fixed AI model
-   - Basic generative AI chat features
-   - Personal use granted (no commercial usage)
-   - Ad-supported
-
-2. **Academic/Research Tier*: $9.99/month* (only available to non-profit .org, .edu addresses)
-   - Up to 500 research queries per month
-   - Up to 25 continuous research queries per month (output limited to 3 search iterations per query)
-   - 3 AI models, including 1 instruct-tuned model
-   - Academic/non-profit use (no commercial usage)
-   - 3-day free trial
-
-3. **Professional Tier**: $29.99/month
-   - Up to 2,500 research queries
-   - 10 AI models; when signing up, you will be asked for some data regarding usage, this will only be used to gauge your choice of models and will not be maintained or stored in any way
-   - Advanced research tools; including unlimited continuous research mode (limited to 5 search iterations per query), upgrade to .pdf output
-   - Full commercial usage rights
-   - 3-day free trial
-
-4. **Enterprise Tier**: $99.99/month
-   - Up to 5,000 research queries
-   - 25 AI models; free 30-min consultation included to determine needs.
-   - Full commercial usage rights
-   - Unlimited queries with local model support
-   - Priority support
-   - Custom integrations (including coding IDE through Bolt.diy [CURRENTLY IN BETA])
-   - 3-day free trial
-
-5. **Perpetual License**: $3,500
-   - One-time purchase for lifetime of usage of Parallax Pal
-   - Free 30-minute consultation included to determine needs
-   - Full commercial rights
-   - Custom integrations
-   - Priority input regarding integrations/implementations, with a private branch unlocking local model support
-   - Access to source code/private GitHub
-
-## Getting Started 🛠️
-
-### Prerequisites
-- Python 3.9+
-- Git
-- Docker Desktop (with WSL 2 backend for Windows)
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/clduab11/parallax-pal
-cd parallax-pal
+```
+parallax-pal/
+├── src/
+│   ├── api/                # Backend FastAPI application
+│   │   ├── __init__.py
+│   │   ├── main.py        # API entry point
+│   │   ├── auth.py        # Authentication
+│   │   ├── models.py      # Database models
+│   │   ├── database.py    # Database configuration
+│   │   ├── config.py      # Application configuration
+│   │   ├── cache.py       # Redis caching
+│   │   ├── monitoring.py  # Metrics and logging
+│   │   └── research.py    # Research task handling
+│   │
+│   └── frontend/          # React/TypeScript frontend
+│       ├── src/
+│       │   ├── components/ # Reusable UI components
+│       │   ├── contexts/   # React contexts (auth, etc.)
+│       │   ├── pages/     # Page components
+│       │   ├── services/  # API integration
+│       │   └── types/     # TypeScript definitions
+│       ├── package.json
+│       └── tsconfig.json
 ```
 
-2. Set up virtual environment:
+## Prerequisites
+
+- Python 3.8+
+- Node.js 14+
+- PostgreSQL 13+
+- Redis 6+
+
+## Backend Setup
+
+1. Create a virtual environment:
 ```bash
 python -m venv venv
-# Activate for Windows
-venv\Scripts\activate
-# Activate for Linux/macOS
-source venv/bin/activate
+source venv/bin/activate  # Linux/Mac
+.\venv\Scripts\activate   # Windows
 ```
 
-3. Install dependencies:
+2. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Configure environment:
-- Copy `.env.example` to `.env`
-- Add API keys for Tavily and Brave Search
+3. Configure environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
 
-### Usage
+4. Initialize the database:
+```bash
+python -m alembic upgrade head
+```
 
-1. Ensure Ollama is running
-2. Start a research session:
-   - Use `@` followed by your research query
-   - Example: `@What are the ethical implications of AI in healthcare?`
+5. Start the API server:
+```bash
+uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+```
 
-3. Research Commands:
-   - `P`: Pause and show options
-   - `F`: Finalize and synthesize research
-   - `Q`: Quit research
+The API will be available at http://localhost:8000  
+Swagger documentation at http://localhost:8000/api/docs  
+ReDoc documentation at http://localhost:8000/api/redoc
 
-## License 
+## Frontend Setup
 
-© 2025 Chris Dukes, Parallax Analytics. All Rights Reserved.
+1. Navigate to the frontend directory:
+```bash
+cd src/frontend
+```
 
-Detailed licensing terms available in the LICENSE file. Different usage rights apply based on selected subscription tier.
+2. Install dependencies:
+```bash
+npm install
+```
 
-## Disclaimer ⚠️
+3. Start the development server:
+```bash
+npm start
+```
 
-This project is primarily for educational and research purposes. Users must comply with all API and service terms of use. Parallax Analytics shall be held indemnified in the event of any unethical, amoral, or illegal behavior with the usage of Parallax Pal. User accepts all risk of utilizing generative deep learning/artificial intelligence technology for any contextual and/or informational purposes.
+The frontend will be available at http://localhost:3000
 
+## Production Deployment
 
-### Licensing Options
+### Backend
 
-- **Non-Commercial Use**: Personal usage only.
-- **Academic/Non-Profit Use**: MIT license applies, please cite my GitHub, license, and disclaimer.
-- **Commercial Use**: Professional and Enterprise tiers; full ownership of any generative product
-- **Perpetual License**: Includes full ownership of any generative product
+1. Set environment variables:
+- `ENV=production`
+- `DEBUG=False`
+- Configure secure `SECRET_KEY`
+- Set production `DATABASE_URL`
+- Configure `REDIS_URL`
+- Set valid `FRONTEND_URL` for CORS
+- Configure `METRICS_PREFIX`
+- Set up `ERROR_REPORTING_EMAIL`
+
+2. Run database migrations:
+```bash
+alembic upgrade head
+```
+
+3. Start using gunicorn with multiple workers:
+```bash
+gunicorn -w 4 -k uvicorn.workers.UvicornWorker --log-level info --access-logfile - src.api.main:app
+```
+
+### Frontend
+
+1. Build the production bundle:
+```bash
+cd src/frontend
+npm run build
+```
+
+2. Serve using nginx or similar web server, with configuration for:
+- Caching static assets
+- Gzip compression
+- SSL/TLS
+- HTTP/2
+- Security headers
+
+## Monitoring
+
+### Metrics
+- Prometheus metrics available at `/metrics`
+- Connection pool statistics
+- Request latency tracking
+- Error rate monitoring
+- Task queue metrics
+
+### Logging
+- Structured JSON logs
+- Log levels (DEBUG, INFO, WARNING, ERROR)
+- Request/response logging
+- Error tracking
+- Performance metrics
+
+### Health Checks
+- Basic health: `/`
+- Detailed health: `/api/health`
+- Database connectivity
+- Redis connection status
+- System resources
+
+## Testing
+
+### Backend
+```bash
+# Run all tests with coverage
+pytest --cov=src/api
+
+# Run specific test categories
+pytest tests/unit
+pytest tests/integration
+pytest tests/e2e
+```
+
+### Frontend
+```bash
+cd src/frontend
+
+# Run all tests
+npm test
+
+# Run with coverage
+npm test -- --coverage
+
+# Run specific tests
+npm test -- --watch
+```
+
+## API Documentation
+
+- Swagger UI: `/api/docs`
+- ReDoc: `/api/redoc`
+- OpenAPI JSON: `/api/openapi.json`
+
+Includes detailed descriptions of:
+- Authentication flows
+- Research endpoints
+- Analytics integration
+- Error responses
+- Rate limits
+- Request/response schemas
+
+## Environment Variables
+
+See `.env.example` for all available configuration options, including:
+- Application settings
+- Security configurations
+- Database settings
+- Redis configuration
+- Monitoring options
+- Feature flags
+- Integration settings
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Implement changes with tests
+4. Submit a pull request
+
+Please ensure:
+- All tests pass
+- Code follows style guidelines
+- Documentation is updated
+- Changes are backwards compatible
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
