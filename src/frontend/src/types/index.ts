@@ -1,80 +1,83 @@
-// Auth types
-export interface User {
-  id: number;
-  username: string;
-  role: string;
-  email?: string;
-}
+// Re-export subscription types with explicit naming
+export type {
+  SubscriptionPlan,
+  Subscription,
+  PaymentMethod,
+  SubscriptionCheckoutSession,
+  SubscriptionError,
+  SubscriptionInterval,
+  CreateSubscriptionRequest,
+  UpdateSubscriptionRequest,
+  AddPaymentMethodRequest
+} from './subscription';
 
-export interface AuthState {
-  user: User | null;
-  token: string | null;
-  loading: boolean;
-  error: string | null;
-}
+// Re-export user types with explicit naming
+export type {
+  User,
+  UserRole,
+  AuthResponse,
+  LoginCredentials,
+  RegisterData,
+  PasswordResetRequest,
+  PasswordResetConfirm,
+  MfaSetupResponse,
+  UserUpdateRequest,
+  AuthContextState,
+  AuthContextActions,
+  AuthContextType
+} from './user';
 
-// Research types
-export type ResearchStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
+// Export SubscriptionStatus from user types to avoid conflict
+export { type SubscriptionStatus } from './user';
 
-export interface ResearchTask {
-  id: number;
-  query: string;
-  status: ResearchStatus;
-  result?: string;
-  error_message?: string;
-  created_at: string;
-  updated_at: string;
-  analytics?: ResearchAnalytics;
-}
+// Re-export component types
+export type {
+  LoadingProps,
+  ErrorMessageProps,
+  ModalProps,
+  FormField,
+  RouteConfig,
+  ThemeConfig
+} from './components';
 
-export interface ResearchAnalytics {
-  processing_time_ms: number;
-  token_count: number;
-  source_count: number;
-  created_at?: string;
-}
-
-// API Response types
-export interface ApiResponse<T> {
+// Common API response types
+export interface ApiResponse<T = any> {
   data: T;
   message?: string;
-  error?: string;
+  status: number;
+}
+
+export interface ApiError {
+  message: string;
+  code: string;
+  status: number;
+  details?: Record<string, any>;
 }
 
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;
   page: number;
-  page_size: number;
+  per_page: number;
   total_pages: number;
 }
 
-// API Error types
-export interface ApiError {
-  status: number;
-  message: string;
-  details?: any;
-}
-
-// Route types
-export interface LocationState {
-  from: {
-    pathname: string;
+// Environment configuration
+export interface AppConfig {
+  apiUrl: string;
+  stripePublishableKey: string;
+  environment: 'development' | 'staging' | 'production';
+  features: {
+    mfa: boolean;
+    analytics: boolean;
+    subscription: boolean;
   };
 }
 
-// Config type
-export interface Config {
-  API_URL: string;
-  MAX_RETRIES: number;
-  POLLING_INTERVAL: number;
-  TOKEN_STORAGE_KEY: string;
+// Analytics events
+export interface AnalyticsEvent {
+  name: string;
+  properties?: Record<string, any>;
+  timestamp?: number;
+  userId?: string | number;
 }
-
-// Constants
-export const DEFAULT_CONFIG: Config = {
-  API_URL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
-  MAX_RETRIES: 3,
-  POLLING_INTERVAL: 5000, // 5 seconds
-  TOKEN_STORAGE_KEY: 'parallax_token'
-};

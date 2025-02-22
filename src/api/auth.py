@@ -39,6 +39,32 @@ def create_access_token(data: dict) -> str:
         security_settings['secret_key'],
         algorithm=security_settings['algorithm']
     )
+def decode_token(token: str) -> dict:
+    """Decode JWT token"""
+    security_settings = get_security_settings()
+    try:
+        payload = jwt.decode(
+            token,
+            security_settings['secret_key'],
+            algorithms=[security_settings['algorithm']]
+        )
+        return payload
+    except PyJWTError:
+        return None
+
+
+def create_refresh_token(data: dict) -> str:
+    """Create JWT refresh token"""
+    security_settings = get_security_settings()
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(days=security_settings['refresh_token_expire_days'])
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(
+        to_encode,
+        security_settings['secret_key'],
+        algorithm=security_settings['algorithm']
+    )
+    return encoded_jwt
     return encoded_jwt
 
 def create_api_key(db: Session, user: models.User, name: str, expires_in_days: Optional[int] = None) -> models.APIKey:

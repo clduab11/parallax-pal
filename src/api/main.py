@@ -1,17 +1,51 @@
 from datetime import datetime, timedelta
-from typing import List, Optional, Dict, Any
-from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Request
+from typing import List, Optional, Dict, Any, Union
+from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+import pyotp
+import stripe
+from pydantic import BaseModel, EmailStr, constr, validator
 
 from . import models, auth
 from .database import get_db, init_db
 from .research import research_service
 from .cache import cache, cache_response
 from .monitoring import setup_monitoring, monitor_endpoint, StructuredLogger
+from .config import settings
+
+# Configure Stripe
+stripe.api_key = settings["stripe"]["secret_key"]
+stripe.api_version = "2023-10-16"  # Use latest stable version
+
+# Pydantic models for payment/subscription
+class SubscriptionPlanCreate(BaseModel):
+    name: str
+    description: str
+    price: float
+    interval: str
+    features: Dict[str, Any]
+
+    @validator("interval")
+    def validate_interval(cls, v):
+        if v not in ["month", "year"]:
+            raise ValueError("interval must be 'month' or 'year'")
+        return v
+
+class PaymentMethodCreate(BaseModel):
+    payment_method_id: str
+    set_default: bool = False
+
+class SubscriptionCreate(BaseModel):
+    plan_id: int
+    payment_method_id: Optional[str] = None
+
+class WebhookEvent(BaseModel):
+    type: str
+    data: Dict[str, Any]
 
 # Initialize FastAPI app with enhanced metadata
 app = FastAPI(
@@ -51,6 +85,11 @@ async def startup_event():
     init_db()
     structured_logger.log("info", "Application started successfully")
 
+class UserCreate(BaseModel):
+    email: str
+    username: str
+    password: str
+
 # Authentication Endpoints
 @app.post("/token", 
     response_model=Dict[str, str],
@@ -77,8 +116,600 @@ async def login(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     
+    refresh_token = auth.create_refresh_token(data={"sub": user.username})
+    
+    # Store refresh token in database
+    db_refresh_token = models.RefreshToken(
+        token=refresh_token,
+        user_id=user.id,
+        expires_at=datetime.utcnow() + timedelta(days=settings['security']['refresh_token_expire_days'])
+    )
+    db.add(db_refresh_token)
+    db.commit()
+    db.refresh(db_refresh_token)
+
     structured_logger.log("info", "Successful login", username=user.username)
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+@app.post("/register", response_model=Dict[str, Any],
+    tags=["authentication"],
+    summary="Register a new user",
+    description="Create a new user account")
+async def register(user: UserCreate, db: Session = Depends(get_db)):
+    existing_user = db.query(models.User).filter(models.User.email == user.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    hashed_password = auth.get_password_hash(user.password)
+    new_user = models.User(email=user.email, username=user.username, hashed_password=hashed_password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    # Generate verification token
+    verification_token = auth.create_access_token(data={"sub": new_user.username}, expires_delta=timedelta(hours=24))
+    
+    # Send verification email
+    await send_verification_email(new_user.email, verification_token)
+    
+    return {"message": "Registration successful. Please check your email to verify your account."}
+
+@app.get("/verify", tags=["authentication"],
+    summary="Verify user account",
+    description="Verify user account using the verification token")
+async def verify(token: str, db: Session = Depends(get_db)):
+    payload = auth.decode_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification token"
+        )
+    username: str = payload.get("sub")
+    if not username:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification token"
+        )
+    user = db.query(models.User).filter(models.User.username == username).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    if user.is_active:
+        return {"message": "Account already verified"}
+    user.is_active = True
+    db.commit()
+    return {"message": "Account verified successfully"}
+
+@app.post("/generate_mfa_secret", tags=["authentication"],
+    summary="Generate MFA secret",
+    description="Generate a new MFA secret for the user")
+async def generate_mfa_secret(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    # Generate new MFA secret
+    totp = pyotp.TOTP(pyotp.random_base32())
+    secret = totp.secret()
+
+    # Store secret in database
+    current_user.mfa_secret = secret
+    db.commit()
+
+    # Return secret
+    return {"secret": secret}
+
+@app.post("/verify_mfa", tags=["authentication"],
+    summary="Verify MFA code",
+    description="Verify the MFA code provided by the user")
+async def verify_mfa(code: str, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    if not current_user.mfa_secret:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="MFA not set up for this user"
+        )
+    
+    totp = pyotp.TOTP(current_user.mfa_secret)
+    if not totp.verify(code):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid MFA code"
+        )
+    
+    return {"message": "MFA verification successful"}
+
+@app.post("/refresh_token",
+    response_model=Dict[str, str],
+    tags=["authentication"],
+    summary="Refresh JWT access token",
+    description="Use refresh token to obtain a new JWT access token")
+async def refresh_token(
+    refresh_token: str,
+    db: Session = Depends(get_db)
+):
+    payload = auth.decode_token(refresh_token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    username: str = payload.get("sub")
+    if username is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user = (
+        db.query(models.User)
+        .filter(models.User.username == username)
+        .filter(models.User.is_active == True)
+        .first()
+    )
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Check if refresh token exists and is valid
+    db_refresh_token = (
+        db.query(models.RefreshToken)
+        .filter(models.RefreshToken.token == refresh_token)
+        .filter(models.RefreshToken.user_id == user.id)
+        .filter(models.RefreshToken.expires_at > datetime.utcnow())
+        .first()
+    )
+    if not db_refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Create new access token
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+
+    # Rotate refresh token
+    new_refresh_token = auth.create_refresh_token(data={"sub": user.username})
+    db_new_refresh_token = models.RefreshToken(
+        token=new_refresh_token,
+        user_id=user.id,
+        expires_at=datetime.utcnow() + timedelta(days=settings['security']['refresh_token_expire_days'])
+    )
+    db.add(db_new_refresh_token)
+    db.commit()
+    db.refresh(db_new_refresh_token)
+
+    # Invalidate old refresh token
+    db_refresh_token.replaced_by = db_new_refresh_token.id
+    db.commit()
+
+    return {"access_token": access_token, "refresh_token": new_refresh_token, "token_type": "bearer"}
+
+@app.post("/reset_password_request", tags=["authentication"],
+    summary="Request password reset",
+    description="Request a password reset link to be sent to the user's email address")
+async def reset_password_request(email: str, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Generate reset token
+    reset_token = auth.create_access_token(data={"sub": user.username}, expires_delta=timedelta(hours=24))
+
+    # Send reset email
+    await send_reset_email(email, reset_token)
+
+    return {"message": "Password reset link sent to your email address"}
+
+# Payment and Subscription Endpoints
+@app.post("/api/subscription/plans",
+    response_model=Dict[str, Any],
+    tags=["subscription"],
+    summary="Create subscription plan",
+    description="Create a new subscription plan (admin only)")
+@monitor_endpoint("create_subscription_plan")
+async def create_subscription_plan(
+    plan: SubscriptionPlanCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.check_admin_role)
+):
+    # Create Stripe product and price
+    stripe_product = stripe.Product.create(
+        name=plan.name,
+        description=plan.description,
+        metadata={"features": str(plan.features)}
+    )
+    
+    stripe_price = stripe.Price.create(
+        product=stripe_product.id,
+        unit_amount=int(plan.price * 100),  # Convert to cents
+        currency="usd",
+        recurring={"interval": plan.interval}
+    )
+    
+    # Create plan in database
+    db_plan = models.SubscriptionPlan(
+        name=plan.name,
+        description=plan.description,
+        price=plan.price,
+        interval=plan.interval,
+        stripe_price_id=stripe_price.id,
+        features=plan.features
+    )
+    db.add(db_plan)
+    db.commit()
+    db.refresh(db_plan)
+    
+    return db_plan
+
+@app.get("/api/subscription/plans",
+    response_model=List[Dict[str, Any]],
+    tags=["subscription"],
+    summary="List subscription plans",
+    description="Get list of available subscription plans")
+@monitor_endpoint("list_subscription_plans")
+@cache_response(timeout=300)  # Cache for 5 minutes
+async def list_subscription_plans(
+    db: Session = Depends(get_db)
+):
+    plans = db.query(models.SubscriptionPlan)\
+        .filter(models.SubscriptionPlan.is_active == True)\
+        .all()
+    return plans
+
+@app.post("/api/subscription/checkout",
+    response_model=Dict[str, str],
+    tags=["subscription"],
+    summary="Create checkout session",
+    description="Create a Stripe checkout session for subscription")
+@monitor_endpoint("create_checkout_session")
+async def create_checkout_session(
+    plan_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    plan = db.query(models.SubscriptionPlan)\
+        .filter(models.SubscriptionPlan.id == plan_id)\
+        .filter(models.SubscriptionPlan.is_active == True)\
+        .first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    # Create or get Stripe customer
+    if not current_user.stripe_customer_id:
+        customer = stripe.Customer.create(
+            email=current_user.email,
+            metadata={"user_id": current_user.id}
+        )
+        current_user.stripe_customer_id = customer.id
+        db.commit()
+    
+    # Create checkout session
+    session = stripe.checkout.Session.create(
+        customer=current_user.stripe_customer_id,
+        payment_method_types=['card'],
+        line_items=[{
+            'price': plan.stripe_price_id,
+            'quantity': 1,
+        }],
+        mode='subscription',
+        success_url=f"{settings['frontend']['url']}/subscription/success",
+        cancel_url=f"{settings['frontend']['url']}/subscription/cancel",
+        metadata={
+            "user_id": current_user.id,
+            "plan_id": plan.id
+        }
+    )
+    
+    return {"session_id": session.id}
+
+@app.post("/api/subscription/webhook",
+    tags=["subscription"],
+    summary="Stripe webhook handler",
+    description="Handle Stripe webhook events")
+async def stripe_webhook(
+    request: Request,
+    stripe_signature: str = Header(...),
+    db: Session = Depends(get_db)
+):
+    # Get raw request body
+    payload = await request.body()
+    
+    try:
+        # Verify webhook signature
+        event = stripe.Webhook.construct_event(
+            payload,
+            stripe_signature,
+            settings["stripe"]["webhook_secret"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Handle the event
+    if event.type == "checkout.session.completed":
+        session = event.data.object
+        user_id = session.metadata.get("user_id")
+        plan_id = session.metadata.get("plan_id")
+        
+        # Create subscription record
+        subscription = models.Subscription(
+            user_id=user_id,
+            plan_id=plan_id,
+            stripe_subscription_id=session.subscription,
+            status=models.SubscriptionStatus.ACTIVE,
+            current_period_start=datetime.fromtimestamp(session.subscription.current_period_start),
+            current_period_end=datetime.fromtimestamp(session.subscription.current_period_end)
+        )
+        db.add(subscription)
+        db.commit()
+    
+    elif event.type == "customer.subscription.updated":
+        subscription = event.data.object
+        db_subscription = db.query(models.Subscription)\
+            .filter(models.Subscription.stripe_subscription_id == subscription.id)\
+            .first()
+        if db_subscription:
+            db_subscription.status = subscription.status
+            db_subscription.current_period_end = datetime.fromtimestamp(subscription.current_period_end)
+            db_subscription.cancel_at_period_end = subscription.cancel_at_period_end
+            db.commit()
+    
+    elif event.type == "customer.subscription.deleted":
+        subscription = event.data.object
+        db_subscription = db.query(models.Subscription)\
+            .filter(models.Subscription.stripe_subscription_id == subscription.id)\
+            .first()
+        if db_subscription:
+            db_subscription.status = models.SubscriptionStatus.CANCELED
+            db_subscription.canceled_at = datetime.now()
+            db.commit()
+
+    return {"status": "success"}
+
+@app.post("/api/subscription/cancel",
+    response_model=Dict[str, str],
+    tags=["subscription"],
+    summary="Cancel subscription",
+    description="Cancel the current subscription")
+@monitor_endpoint("cancel_subscription")
+async def cancel_subscription(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # Get active subscription
+    subscription = db.query(models.Subscription)\
+        .filter(models.Subscription.user_id == current_user.id)\
+        .filter(models.Subscription.status == models.SubscriptionStatus.ACTIVE)\
+        .first()
+    
+    if not subscription:
+        raise HTTPException(status_code=404, detail="No active subscription found")
+    
+    # Cancel subscription in Stripe
+    stripe.Subscription.modify(
+        subscription.stripe_subscription_id,
+        cancel_at_period_end=True
+    )
+    
+    # Update local subscription
+    subscription.cancel_at_period_end = True
+    db.commit()
+    
+    return {"message": "Subscription will be canceled at the end of the billing period"}
+
+@app.get("/api/subscription/status",
+    response_model=Dict[str, Any],
+    tags=["subscription"],
+    summary="Get subscription status",
+    description="Get current user's subscription status")
+@monitor_endpoint("get_subscription_status")
+@cache_response(timeout=60)  # Cache for 1 minute
+async def get_subscription_status(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    subscription = db.query(models.Subscription)\
+        .filter(models.Subscription.user_id == current_user.id)\
+        .filter(models.Subscription.status == models.SubscriptionStatus.ACTIVE)\
+        .first()
+    
+    if not subscription:
+        return {
+            "has_subscription": False,
+            "subscription": None
+        }
+    
+    return {
+        "has_subscription": True,
+        "subscription": {
+            "plan": subscription.plan,
+            "status": subscription.status,
+            "current_period_end": subscription.current_period_end,
+            "cancel_at_period_end": subscription.cancel_at_period_end
+        }
+    }
+
+# Payment Method Endpoints
+@app.post("/api/payment-methods",
+    response_model=Dict[str, Any],
+    tags=["payment"],
+    summary="Add payment method",
+    description="Add a new payment method for the user")
+@monitor_endpoint("add_payment_method")
+async def add_payment_method(
+    payment_method: PaymentMethodCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    try:
+        # Attach payment method to Stripe customer
+        stripe.PaymentMethod.attach(
+            payment_method.payment_method_id,
+            customer=current_user.stripe_customer_id
+        )
+
+        # Get payment method details
+        pm = stripe.PaymentMethod.retrieve(payment_method.payment_method_id)
+
+        # Create payment method record
+        db_payment_method = models.PaymentMethod(
+            user_id=current_user.id,
+            stripe_payment_method_id=pm.id,
+            type=pm.type,
+            last4=pm.card.last4,
+            exp_month=pm.card.exp_month,
+            exp_year=pm.card.exp_year,
+            is_default=payment_method.set_default
+        )
+        
+        if payment_method.set_default:
+            # Set all other payment methods as non-default
+            db.query(models.PaymentMethod)\
+                .filter(models.PaymentMethod.user_id == current_user.id)\
+                .update({"is_default": False})
+            
+            # Update default payment method in Stripe
+            stripe.Customer.modify(
+                current_user.stripe_customer_id,
+                invoice_settings={
+                    "default_payment_method": payment_method.payment_method_id
+                }
+            )
+
+        db.add(db_payment_method)
+        db.commit()
+        db.refresh(db_payment_method)
+
+        return db_payment_method
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/payment-methods",
+    response_model=List[Dict[str, Any]],
+    tags=["payment"],
+    summary="List payment methods",
+    description="Get list of user's payment methods")
+@monitor_endpoint("list_payment_methods")
+async def list_payment_methods(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    payment_methods = db.query(models.PaymentMethod)\
+        .filter(models.PaymentMethod.user_id == current_user.id)\
+        .all()
+    return payment_methods
+
+@app.delete("/api/payment-methods/{payment_method_id}",
+    response_model=Dict[str, str],
+    tags=["payment"],
+    summary="Delete payment method",
+    description="Delete a payment method")
+@monitor_endpoint("delete_payment_method")
+async def delete_payment_method(
+    payment_method_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # Get payment method from database
+    payment_method = db.query(models.PaymentMethod)\
+        .filter(models.PaymentMethod.user_id == current_user.id)\
+        .filter(models.PaymentMethod.stripe_payment_method_id == payment_method_id)\
+        .first()
+    
+    if not payment_method:
+        raise HTTPException(status_code=404, detail="Payment method not found")
+    
+    try:
+        # Detach payment method from Stripe customer
+        stripe.PaymentMethod.detach(payment_method_id)
+        
+        # Delete from database
+        db.delete(payment_method)
+        db.commit()
+        
+        return {"message": "Payment method deleted successfully"}
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/payment-methods/{payment_method_id}/set-default",
+    response_model=Dict[str, str],
+    tags=["payment"],
+    summary="Set default payment method",
+    description="Set a payment method as default")
+@monitor_endpoint("set_default_payment_method")
+async def set_default_payment_method(
+    payment_method_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # Get payment method from database
+    payment_method = db.query(models.PaymentMethod)\
+        .filter(models.PaymentMethod.user_id == current_user.id)\
+        .filter(models.PaymentMethod.stripe_payment_method_id == payment_method_id)\
+        .first()
+    
+    if not payment_method:
+        raise HTTPException(status_code=404, detail="Payment method not found")
+    
+    try:
+        # Update default payment method in Stripe
+        stripe.Customer.modify(
+            current_user.stripe_customer_id,
+            invoice_settings={
+                "default_payment_method": payment_method_id
+            }
+        )
+        
+        # Update in database
+        db.query(models.PaymentMethod)\
+            .filter(models.PaymentMethod.user_id == current_user.id)\
+            .update({"is_default": False})
+        
+        payment_method.is_default = True
+        db.commit()
+        
+        return {"message": "Default payment method updated successfully"}
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+async def send_verification_email(email: str, token: str):
+    # TODO: Implement email sending logic here
+    print(f"Sending verification email to {email} with token {token}")
+    # For example, you can use the following code:
+    # from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+    # conf = ConnectionConfig(
+    #     MAIL_USERNAME=settings.EMAIL_USERNAME,
+    #     MAIL_PASSWORD=settings.EMAIL_PASSWORD,
+    #     MAIL_FROM=settings.EMAIL_FROM,
+    #     MAIL_PORT=settings.EMAIL_PORT,
+    #     MAIL_SERVER=settings.EMAIL_HOST,
+    #     MAIL_STARTTLS=True,
+    #     MAIL_SSL_TLS=False,
+    #     USE_CREDENTIALS=True,
+    #     VALIDATE_CERTS=True
+    # )
+    # message = MessageSchema(
+    #     subject="Account Verification",
+    #     recipients=[email],
+    #     body=f"Please click on the following link to verify your account: {settings.FRONTEND_URL}/verify?token={token}",
+    #     subtype="html"
+    # )
+    # fm = FastMail(conf)
+    # await fm.send_message(message)
+    pass
+
+async def send_reset_email(email: str, token: str):
+    # TODO: Implement email sending logic here
+    print(f"Sending reset email to {email} with token {token}")
+    # Implementation similar to send_verification_email
+    pass
 
 # Research Endpoints
 @app.post("/api/research/tasks",

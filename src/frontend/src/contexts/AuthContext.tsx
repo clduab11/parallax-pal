@@ -1,10 +1,38 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axios, { AxiosError } from 'axios';
+
+export interface SubscriptionPlan {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  interval: 'month' | 'year';
+  features: Record<string, any>;
+}
+
+export interface Subscription {
+  plan: SubscriptionPlan;
+  status: 'active' | 'canceled' | 'past_due' | 'unpaid' | 'trialing';
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+}
+
+export interface PaymentMethod {
+  id: string;
+  type: string;
+  last4: string;
+  exp_month: number;
+  exp_year: number;
+  is_default: boolean;
+}
 
 interface User {
   id: number;
   username: string;
   role: string;
+  subscription_status?: 'active' | 'canceled' | 'past_due' | 'unpaid' | 'trialing';
+  subscription?: Subscription;
+  stripe_customer_id?: string;
 }
 
 interface AuthContextType {
@@ -14,6 +42,17 @@ interface AuthContextType {
   error: string | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  getSubscriptionStatus: () => Promise<Subscription | null>;
+  getPaymentMethods: () => Promise<PaymentMethod[]>;
+  addPaymentMethod: (paymentMethodId: string, setDefault?: boolean) => Promise<void>;
+  removePaymentMethod: (paymentMethodId: string) => Promise<void>;
+  setDefaultPaymentMethod: (paymentMethodId: string) => Promise<void>;
+  createCheckoutSession: (planId: number) => Promise<string>;
+  cancelSubscription: () => Promise<void>;
+}
+
+interface AuthProviderProps {
+  children: ReactNode;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,7 +65,7 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
@@ -75,8 +114,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userResponse = await axios.get('/api/user/me');
       setUser(userResponse.data);
       setToken(access_token);
-    } catch (error: any) {
-      setError(error.response?.data?.detail || 'Login failed');
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      setError(axiosError.response?.data?.detail || 'Login failed');
       throw error;
     } finally {
       setLoading(false);
@@ -90,6 +130,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     delete axios.defaults.headers.common['Authorization'];
   };
 
+  const getSubscriptionStatus = async () => {
+    try {
+      const response = await axios.get('/api/subscription/status');
+      if (response.data.has_subscription) {
+        setUser((prev: User | null) => prev ? { ...prev, subscription: response.data.subscription } : prev);
+        return response.data.subscription;
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to fetch subscription status:', error);
+      return null;
+    }
+  };
+
+  const getPaymentMethods = async () => {
+    const response = await axios.get('/api/payment-methods');
+    return response.data;
+  };
+
+  const addPaymentMethod = async (paymentMethodId: string, setDefault = false) => {
+    await axios.post('/api/payment-methods', {
+      payment_method_id: paymentMethodId,
+      set_default: setDefault,
+    });
+  };
+
+  const removePaymentMethod = async (paymentMethodId: string) => {
+    await axios.delete(`/api/payment-methods/${paymentMethodId}`);
+  };
+
+  const setDefaultPaymentMethod = async (paymentMethodId: string) => {
+    await axios.post(`/api/payment-methods/${paymentMethodId}/set-default`);
+  };
+
+  const createCheckoutSession = async (planId: number) => {
+    const response = await axios.post('/api/subscription/checkout', { plan_id: planId });
+    return response.data.session_id;
+  };
+
+  const cancelSubscription = async () => {
+    await axios.post('/api/subscription/cancel');
+    const subscription = await getSubscriptionStatus();
+    setUser((prev: User | null) => prev ? { ...prev, subscription } : prev);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -99,6 +184,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error,
         login,
         logout,
+        getSubscriptionStatus,
+        getPaymentMethods,
+        addPaymentMethod,
+        removePaymentMethod,
+        setDefaultPaymentMethod,
+        createCheckoutSession,
+        cancelSubscription,
       }}
     >
       {children}

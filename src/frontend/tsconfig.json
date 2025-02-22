@@ -15,7 +15,20 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "baseUrl": "src"
+    "baseUrl": "src",
+    "paths": {
+      "@/*": ["*"],
+      "@components/*": ["components/*"],
+      "@contexts/*": ["contexts/*"],
+      "@types/*": ["types/*"]
+    },
+    "types": ["node", "jest", "react", "react-dom"],
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictPropertyInitialization": true
   },
   "include": ["src"],
   "exclude": ["node_modules"]
