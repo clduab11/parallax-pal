@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td>
+            <h2 style="color: #00FF00; font-size: 20px; margin-bottom: 20px; text-align: center;">
+                Welcome to {{ app_name }}!
+            </h2>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #00FF00; margin-bottom: 20px;">
+                > INITIALIZING VERIFICATION SEQUENCE...<br>
+                > USER REGISTRATION DETECTED<br>
+                > AWAITING EMAIL CONFIRMATION
+            </p>
+            <p style="color: #00FF00; margin-bottom: 20px;">
+                Please verify your email address to activate your account and gain full access to {{ app_name }}.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" style="padding: 20px 0;">
+            <!-- Primary Button -->
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                <tr>
+                    <td align="center" style="background-color: #006600; padding: 2px; border-radius: 4px;">
+                        <a href="{{ verification_url }}" 
+                           style="background-color: #000000; border: 1px solid #00FF00; color: #00FF00; display: inline-block; padding: 12px 24px; text-decoration: none; font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: bold; border-radius: 3px;">
+                            VERIFY EMAIL
+                        </a>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #808080; font-size: 14px; margin-bottom: 20px;">
+                If the button doesn't work, copy and paste this link into your browser:
+            </p>
+            <p style="background-color: #000000; border: 1px solid #404040; padding: 10px; word-break: break-all;">
+                <a href="{{ verification_url }}" style="color: #00FF00; text-decoration: none; font-size: 14px;">
+                    {{ verification_url }}
+                </a>
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0; border-top: 1px solid #404040;">
+            <p style="color: #808080; font-size: 14px; margin-bottom: 10px;">
+                SECURITY NOTICE:
+            </p>
+            <ul style="color: #808080; font-size: 14px; margin: 0; padding-left: 20px;">
+                <li style="margin-bottom: 10px;">This verification link will expire in 24 hours.</li>
+                <li style="margin-bottom: 10px;">If you didn't create an account with {{ app_name }}, please ignore this email.</li>
+                <li>For security, this link can only be used once.</li>
+            </ul>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #00FF00; font-size: 14px; text-align: center;">
+                > AWAITING USER VERIFICATION...<br>
+                > SYSTEM READY
+            </p>
+        </td>
+    </tr>
+</table>
+{% endblock %}

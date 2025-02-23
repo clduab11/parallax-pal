@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import '../styles/GPUStatus.css';
 
 interface GPUInfo {
   has_gpu: boolean;
@@ -81,15 +80,27 @@ const GPUStatus: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="gpu-status loading">Loading GPU status...</div>;
+    return (
+      <div className="text-terminal-amber animate-pulse">
+        Loading GPU status...
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="gpu-status error">Error: {error}</div>;
+    return (
+      <div className="text-red-500">
+        Error: {error}
+      </div>
+    );
   }
 
   if (!gpuStatus) {
-    return <div className="gpu-status error">No GPU status available</div>;
+    return (
+      <div className="text-red-500">
+        No GPU status available
+      </div>
+    );
   }
 
   const formatVRAM = (vram: number | null): string => {
@@ -97,53 +108,71 @@ const GPUStatus: React.FC = () => {
   };
 
   return (
-    <div className="gpu-status">
-      <div className="gpu-info">
-        <h3>GPU Status</h3>
+    <div className="text-terminal-green">
+      <div className="mb-6">
+        <h3 className="text-terminal-amber text-lg font-bold mb-3">GPU Status</h3>
         {gpuStatus.gpu_info.has_gpu ? (
           <>
-            <p className="gpu-name">
-              {gpuStatus.gpu_info.gpu_name}
+            <p className="mb-2">
+              <span className="text-terminal-green font-bold">
+                {gpuStatus.gpu_info.gpu_name}
+              </span>
               {gpuStatus.gpu_info.gpu_type && (
-                <span className="gpu-type"> ({gpuStatus.gpu_info.gpu_type})</span>
+                <span className="text-terminal-green opacity-70 ml-2">
+                  ({gpuStatus.gpu_info.gpu_type})
+                </span>
               )}
             </p>
-            <div className="vram-info">
+            <div className="grid grid-cols-3 gap-4 mb-4 bg-terminal-gray-dark p-3 rounded border border-terminal-green">
               <div>Total VRAM: {formatVRAM(gpuStatus.gpu_info.total_vram)}</div>
               <div>Free VRAM: {formatVRAM(gpuStatus.gpu_info.free_vram)}</div>
               <div>Used VRAM: {formatVRAM(gpuStatus.gpu_info.used_vram)}</div>
             </div>
-            <div className="gpu-status-indicator enabled">
-              GPU Acceleration: {gpuStatus.using_gpu ? 'Enabled' : 'Disabled'}
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`h-2 w-2 rounded-full ${gpuStatus.using_gpu ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span>GPU Acceleration: {gpuStatus.using_gpu ? 'Enabled' : 'Disabled'}</span>
               {gpuStatus.gpu_info.metal_support && (
-                <div className="metal-support">Metal Support: Available</div>
+                <span className="ml-4 text-terminal-amber">
+                  Metal Support: Available
+                </span>
               )}
             </div>
           </>
         ) : (
-          <p className="no-gpu">No compatible GPU detected. Using CPU for inference.</p>
+          <p className="text-red-500">
+            No compatible GPU detected. Using CPU for inference.
+          </p>
         )}
       </div>
 
-      <div className="model-info">
-        <h3>Model Information</h3>
-        <div className="current-model">
+      <div>
+        <h3 className="text-terminal-amber text-lg font-bold mb-3">Model Information</h3>
+        <div className="mb-4 bg-terminal-gray-dark p-3 rounded border border-terminal-green">
           <p>Current Model: {gpuStatus.current_model}</p>
-          <p>Recommended Model: {gpuStatus.recommended_model} ({gpuStatus.vram_required}GB VRAM)</p>
+          <p>
+            Recommended Model: {gpuStatus.recommended_model} ({gpuStatus.vram_required}GB VRAM)
+          </p>
         </div>
 
-        <div className="model-list">
-          <h4>Available Models:</h4>
-          <div className="model-grid">
+        <div>
+          <h4 className="text-terminal-amber mb-2">Available Models:</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {gpuStatus.suitable_models.map((model) => (
               <div
                 key={model.model}
-                className={`model-card ${model.suitable ? 'suitable' : 'unsuitable'}`}
                 onClick={() => model.suitable && handleModelChange(model.model)}
+                className={`
+                  p-4 rounded border cursor-pointer transition-colors duration-200
+                  ${model.suitable 
+                    ? 'border-terminal-green hover:bg-terminal-green hover:bg-opacity-10' 
+                    : 'border-red-500 opacity-50 cursor-not-allowed'}
+                `}
               >
-                <div className="model-name">{model.model}</div>
-                <div className="model-vram">{model.vram_required}GB VRAM</div>
-                <div className="model-status">{model.reason}</div>
+                <div className="font-bold mb-1">{model.model}</div>
+                <div className="text-sm opacity-70">{model.vram_required}GB VRAM</div>
+                <div className={`text-sm mt-1 ${model.suitable ? 'text-terminal-green' : 'text-red-500'}`}>
+                  {model.reason}
+                </div>
               </div>
             ))}
           </div>

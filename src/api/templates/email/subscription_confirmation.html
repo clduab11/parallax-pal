@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td>
+            <h2 style="color: #00FF00; font-size: 20px; margin-bottom: 20px; text-align: center;">
+                Premium Access Activated
+            </h2>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #00FF00; margin-bottom: 20px;">
+                > SUBSCRIPTION ACTIVATION COMPLETE<br>
+                > PREMIUM FEATURES UNLOCKED<br>
+                > INITIALIZING ENHANCED CAPABILITIES
+            </p>
+            <p style="color: #00FF00; margin-bottom: 20px;">
+                Thank you for upgrading to {{ plan_name }}. Your premium features are now active and ready for use.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #00FF00; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #00FF00; font-size: 16px; margin-bottom: 15px;">
+                    SUBSCRIPTION DETAILS:
+                </h3>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 15px;">
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Plan:</td>
+                        <td style="padding: 8px 0; color: #00FF00; text-align: right;">{{ plan_name }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Amount:</td>
+                        <td style="padding: 8px 0; color: #00FF00; text-align: right;">${{ "%.2f"|format(amount) }}/month</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Next Billing:</td>
+                        <td style="padding: 8px 0; color: #00FF00; text-align: right;">{{ next_billing_date }}</td>
+                    </tr>
+                </table>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <h3 style="color: #00FF00; font-size: 16px; margin-bottom: 15px;">
+                PREMIUM FEATURES ACTIVATED:
+            </h3>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td width="50%" style="padding: 10px;">
+                        <div style="background-color: #000000; border: 1px solid #404040; padding: 15px;">
+                            <p style="color: #00FF00; font-size: 14px; margin: 0 0 10px 0;">
+                                > GPU Acceleration
+                            </p>
+                            <p style="color: #808080; font-size: 12px; margin: 0;">
+                                Enhanced processing speed with Ollama
+                            </p>
+                        </div>
+                    </td>
+                    <td width="50%" style="padding: 10px;">
+                        <div style="background-color: #000000; border: 1px solid #404040; padding: 15px;">
+                            <p style="color: #00FF00; font-size: 14px; margin: 0 0 10px 0;">
+                                > Multi-Model Analysis
+                            </p>
+                            <p style="color: #808080; font-size: 12px; margin: 0;">
+                                Access to all AI models
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="50%" style="padding: 10px;">
+                        <div style="background-color: #000000; border: 1px solid #404040; padding: 15px;">
+                            <p style="color: #00FF00; font-size: 14px; margin: 0 0 10px 0;">
+                                > Priority Processing
+                            </p>
+                            <p style="color: #808080; font-size: 12px; margin: 0;">
+                                Front of queue access
+                            </p>
+                        </div>
+                    </td>
+                    <td width="50%" style="padding: 10px;">
+                        <div style="background-color: #000000; border: 1px solid #404040; padding: 15px;">
+                            <p style="color: #00FF00; font-size: 14px; margin: 0 0 10px 0;">
+                                > Advanced Analytics
+                            </p>
+                            <p style="color: #808080; font-size: 12px; margin: 0;">
+                                Detailed research insights
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" style="padding: 20px 0;">
+            <!-- Account Button -->
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                <tr>
+                    <td align="center" style="background-color: #006600; padding: 2px; border-radius: 4px;">
+                        <a href="{{ account_url }}" 
+                           style="background-color: #000000; border: 1px solid #00FF00; color: #00FF00; display: inline-block; padding: 12px 24px; text-decoration: none; font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: bold; border-radius: 3px;">
+                            VIEW ACCOUNT
+                        </a>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #404040; padding: 15px;">
+                <p style="color: #808080; font-size: 14px; margin: 0;">
+                    Your subscription will automatically renew on {{ next_billing_date }}. You can manage your subscription settings, including cancellation, from your account dashboard.
+                </p>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #00FF00; font-size: 14px; text-align: center;">
+                > PREMIUM ACCESS CONFIRMED<br>
+                > ALL SYSTEMS OPERATIONAL
+            </p>
+        </td>
+    </tr>
+</table>
+{% endblock %}

@@ -1,96 +1,216 @@
-# ✨ Parallax Pal - Your AI Research Companion
+# Parallax Pal
 
-> 🚀 Supercharge your research with AI-powered analytics and insights
+A full-stack research and analytics platform with a terminal-inspired interface, powered by multiple AI models and GPU acceleration.
 
-## 🌟 What is Parallax Pal?
+## Features
 
-Parallax Pal is your intelligent research assistant that transforms complex data into actionable insights. Whether you're a business analyst, researcher, or decision-maker, our platform harnesses the power of AI to deliver comprehensive research results in minutes, not hours.
+- 🖥️ Terminal-inspired UI with modern UX
+- 🤖 Multi-model AI analysis (GPT-4, Claude, Gemini, Ollama)
+- ⚡ GPU acceleration for local models
+- 🔒 Secure OAuth2 authentication
+- 💳 Stripe subscription management
+- 📊 Real-time analytics and monitoring
+- 🔄 Background task processing
+- 📱 Responsive design for all devices
 
-## 💫 Why Choose Parallax Pal?
+## Tech Stack
 
-### 🧠 Smart Research
-- **Intelligent Analysis** - Multi-model AI processing for deeper insights
-- **Real-time Updates** - Watch your research unfold live
-- **Custom Workflows** - Tailor the research process to your needs
-- **Lightning Fast** - Get results in minutes with GPU acceleration
+### Frontend
+- React with TypeScript
+- Tailwind CSS for styling
+- Terminal-inspired components
+- Real-time WebSocket updates
+- Responsive design
 
-### 🛡️ Enterprise Ready
-- **Bank-Level Security** - Your data is protected with enterprise-grade encryption
-- **Easy Integration** - Seamless API access for your existing tools
-- **Smart Caching** - Lightning-fast response times
-- **24/7 Monitoring** - Real-time system health checks
+### Backend
+- FastAPI (Python)
+- PostgreSQL database
+- Redis caching
+- Alembic migrations
+- OAuth2 authentication
+- Stripe integration
+- Email notifications
+- Background tasks
 
-### 🎯 Perfect For
-- 📊 Market Research
-- 📈 Competitive Analysis
-- 📚 Academic Research
-- 🔍 Data Mining
-- 📑 Document Analysis
-- 🌐 Web Intelligence
+## Getting Started
 
-## 💎 Plans That Fit Your Needs
+### Prerequisites
 
-### Pay-As-You-Go
-Perfect for occasional research needs:
-- 🎯 Single Query: $5.99
-- 🎯 5-Query Pack: $24.99 ($5/query)
-- 🎯 10-Query Pack: $39.99 ($4/query)
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL 15+
+- Redis
+- (Optional) NVIDIA GPU for Ollama acceleration
 
-### Monthly Subscriptions
-Choose the plan that works for you:
+### Environment Setup
 
-#### 🆓 Free Tier
-- Basic research capabilities
-- Limited usage per month
-- Community support
-- Ad-supported
-- $0/month
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/parallax-pal.git
+cd parallax-pal
+```
 
-#### ⭐ Basic
-- Ad-free experience
-- Email support
-- Basic analytics
-- Increased usage per month
-- $49/month
+2. Create and activate Python virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+.\venv\Scripts\activate   # Windows
+```
 
-#### 🌟 Pro
-- Advanced research features
-- GPU acceleration
-- Priority support
-- Unlimited usage
-- $99/month
+3. Install Python dependencies:
+```bash
+cd src/api
+pip install -r requirements.txt
+```
 
-#### 💎 Enterprise
-- Custom solutions
-- Ollama/local-model support for uncapped inference
-- Dedicated support
-- White-label options
-- Starting at $499/month
+4. Install frontend dependencies:
+```bash
+cd ../frontend
+npm install
+```
 
-## 🚀 Get Started in Seconds
+5. Copy example environment files:
+```bash
+cp .env.example .env
+```
 
-1. 📝 Sign up at [parallaxanalytics.com](https://parallaxanalytics.com)
-2. 💳 Choose your plan
-3. ✨ Start researching!
+6. Update environment variables in `.env` with your settings:
+```env
+# Application
+DEBUG=true
+SECRET_KEY=your-secret-key
+ENVIRONMENT=development
 
-## 🔒 Your Data, Your Privacy
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/parallaxpal
 
-- Enterprise-grade security
-- Data encryption at rest and in transit
-- EU USERS: WHILE DATA IS ANONYMIZED/TELEMETRIZED, I CANNOT GUARANTEE COMPLIANCE WITH GDPR
-- Regular security audits
-- Clear, easy opt-outs
-- Innovative, modularized data collection for academic/scientific purposes; you share your data your way
+# Redis
+REDIS_URL=redis://localhost:6379/0
 
-🔧 Looking for technical details? Check out our [Technical Documentation](TECHNICAL.md)
+# OAuth Providers
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+# ... other OAuth provider settings
 
-## 📞 Need Help?
+# Stripe
+STRIPE_SECRET_KEY=your-stripe-secret-key
+STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
+STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
 
-Our support team is ready to assist you:
-- 📧 support@parallaxanalytics.com
-- 💬 Live chat on our website
-- 📚 [Knowledge Base](https://docs.parallaxanalytics.com)
+# Email
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-specific-password
+```
 
-## 📄 License
+### Database Setup
 
-Parallax Pal is under the COPYRIGHT of Parallax Analytics, All Rights Reserved. Copyright 2025.
+1. Create PostgreSQL database:
+```bash
+createdb parallaxpal
+```
+
+2. Run database migrations:
+```bash
+cd src/api
+alembic upgrade head
+```
+
+### Running the Application
+
+1. Start the backend server:
+```bash
+cd src/api
+uvicorn main:app --reload --port 8000
+```
+
+2. Start the frontend development server:
+```bash
+cd src/frontend
+npm start
+```
+
+3. Access the application:
+- Frontend: http://localhost:3000
+- API Documentation: http://localhost:8000/docs
+- API Redoc: http://localhost:8000/redoc
+
+## Development
+
+### Code Style
+
+- Backend: Black + isort + flake8
+- Frontend: ESLint + Prettier
+
+### Running Tests
+
+Backend tests:
+```bash
+cd src/api
+pytest
+```
+
+Frontend tests:
+```bash
+cd src/frontend
+npm test
+```
+
+### Creating Database Migrations
+
+```bash
+cd src/api
+alembic revision --autogenerate -m "description of changes"
+alembic upgrade head
+```
+
+### API Documentation
+
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+- OpenAPI Schema: http://localhost:8000/openapi.json
+
+## Deployment
+
+### Production Setup
+
+1. Build frontend:
+```bash
+cd src/frontend
+npm run build
+```
+
+2. Configure production environment variables
+3. Run database migrations
+4. Start application with production server (e.g., Gunicorn)
+
+### Docker Deployment
+
+1. Build images:
+```bash
+docker-compose build
+```
+
+2. Start services:
+```bash
+docker-compose up -d
+```
+
+## Monitoring
+
+- Application metrics: http://localhost:8000/metrics
+- Health check: http://localhost:8000/health
+- Logs: Check `logs/` directory
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

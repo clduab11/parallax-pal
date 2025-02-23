@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td>
+            <h2 style="color: #00FF00; font-size: 20px; margin-bottom: 20px; text-align: center;">
+                Access Granted: Welcome to {{ app_name }}
+            </h2>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #00FF00; margin-bottom: 20px;">
+                > SYSTEM INITIALIZATION COMPLETE<br>
+                > USER AUTHENTICATION SUCCESSFUL<br>
+                > GRANTING FULL ACCESS PERMISSIONS
+            </p>
+            <p style="color: #00FF00; margin-bottom: 20px;">
+                Welcome aboard, {{ username }}! Your account is now fully activated and ready for operation.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #00FF00; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #00FF00; font-size: 16px; margin-bottom: 15px;">
+                    QUICK START GUIDE:
+                </h3>
+                <ul style="color: #00FF00; margin: 0; padding-left: 20px; list-style-type: none;">
+                    <li style="margin-bottom: 10px;">
+                        <span style="color: #808080;">></span> Configure your research preferences
+                    </li>
+                    <li style="margin-bottom: 10px;">
+                        <span style="color: #808080;">></span> Set up your AI model preferences
+                    </li>
+                    <li style="margin-bottom: 10px;">
+                        <span style="color: #808080;">></span> Start your first research query
+                    </li>
+                    <li>
+                        <span style="color: #808080;">></span> Review the documentation
+                    </li>
+                </ul>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" style="padding: 20px 0;">
+            <!-- Get Started Button -->
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                <tr>
+                    <td align="center" style="background-color: #006600; padding: 2px; border-radius: 4px;">
+                        <a href="{{ login_url }}" 
+                           style="background-color: #000000; border: 1px solid #00FF00; color: #00FF00; display: inline-block; padding: 12px 24px; text-decoration: none; font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: bold; border-radius: 3px;">
+                            BEGIN OPERATION
+                        </a>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <h3 style="color: #00FF00; font-size: 16px; margin-bottom: 15px;">
+                SYSTEM CAPABILITIES:
+            </h3>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td width="50%" style="padding: 10px;">
+                        <div style="background-color: #000000; border: 1px solid #404040; padding: 15px;">
+                            <p style="color: #00FF00; font-size: 14px; margin: 0 0 10px 0;">
+                                > Multi-Model Research
+                            </p>
+                            <p style="color: #808080; font-size: 12px; margin: 0;">
+                                Access multiple AI models for comprehensive analysis
+                            </p>
+                        </div>
+                    </td>
+                    <td width="50%" style="padding: 10px;">
+                        <div style="background-color: #000000; border: 1px solid #404040; padding: 15px;">
+                            <p style="color: #00FF00; font-size: 14px; margin: 0 0 10px 0;">
+                                > Real-time Processing
+                            </p>
+                            <p style="color: #808080; font-size: 12px; margin: 0;">
+                                Instant results with GPU acceleration
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="50%" style="padding: 10px;">
+                        <div style="background-color: #000000; border: 1px solid #404040; padding: 15px;">
+                            <p style="color: #00FF00; font-size: 14px; margin: 0 0 10px 0;">
+                                > Advanced Analytics
+                            </p>
+                            <p style="color: #808080; font-size: 12px; margin: 0;">
+                                Deep insights and pattern recognition
+                            </p>
+                        </div>
+                    </td>
+                    <td width="50%" style="padding: 10px;">
+                        <div style="background-color: #000000; border: 1px solid #404040; padding: 15px;">
+                            <p style="color: #00FF00; font-size: 14px; margin: 0 0 10px 0;">
+                                > Secure Platform
+                            </p>
+                            <p style="color: #808080; font-size: 12px; margin: 0;">
+                                Enterprise-grade security protocols
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #00FF00; font-size: 14px; text-align: center;">
+                > SYSTEM READY FOR OPERATION<br>
+                > AWAITING USER INPUT...
+            </p>
+        </td>
+    </tr>
+</table>
+{% endblock %}

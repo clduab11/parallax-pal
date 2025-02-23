@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td>
+            <h2 style="color: #FFA500; font-size: 20px; margin-bottom: 20px; text-align: center;">
+                ⚠️ Payment Failed ⚠️
+            </h2>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #FFA500; margin-bottom: 20px;">
+                > PAYMENT PROCESSING ERROR<br>
+                > ACCOUNT STATUS: WARNING<br>
+                > ACTION REQUIRED
+            </p>
+            <p style="color: #00FF00; margin-bottom: 20px;">
+                We were unable to process your payment for {{ app_name }}. Your account access will remain active while we attempt to resolve this issue.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #FFA500; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #FFA500; font-size: 16px; margin-bottom: 15px;">
+                    PAYMENT DETAILS:
+                </h3>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 15px;">
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Amount Due:</td>
+                        <td style="padding: 8px 0; color: #FFA500; text-align: right;">${{ "%.2f"|format(amount) }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Next Retry:</td>
+                        <td style="padding: 8px 0; color: #FFA500; text-align: right;">{{ retry_date }}</td>
+                    </tr>
+                </table>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" style="padding: 20px 0;">
+            <!-- Update Payment Button -->
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                <tr>
+                    <td align="center" style="background-color: #664400; padding: 2px; border-radius: 4px;">
+                        <a href="{{ billing_url }}" 
+                           style="background-color: #000000; border: 1px solid #FFA500; color: #FFA500; display: inline-block; padding: 12px 24px; text-decoration: none; font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: bold; border-radius: 3px;">
+                            UPDATE PAYMENT METHOD
+                        </a>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #404040; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #FFA500; font-size: 16px; margin-bottom: 15px;">
+                    WHAT THIS MEANS:
+                </h3>
+                <ul style="color: #808080; margin: 0; padding-left: 20px;">
+                    <li style="margin-bottom: 10px;">Your payment method was declined</li>
+                    <li style="margin-bottom: 10px;">We will retry the payment automatically on {{ retry_date }}</li>
+                    <li style="margin-bottom: 10px;">Your account access remains active during this grace period</li>
+                    <li>To prevent service interruption, please update your payment method</li>
+                </ul>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #FFA500; padding: 20px;">
+                <h3 style="color: #FFA500; font-size: 16px; margin-bottom: 15px;">
+                    RECOMMENDED ACTIONS:
+                </h3>
+                <ol style="color: #00FF00; margin: 0; padding-left: 20px;">
+                    <li style="margin-bottom: 10px;">Check your payment method details</li>
+                    <li style="margin-bottom: 10px;">Verify sufficient funds are available</li>
+                    <li style="margin-bottom: 10px;">Update billing information if needed</li>
+                    <li>Contact your bank if the issue persists</li>
+                </ol>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #404040; padding: 15px;">
+                <p style="color: #808080; font-size: 14px; margin: 0;">
+                    Need assistance? Our support team is available 24/7 at {{ support_email }}
+                </p>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #FFA500; font-size: 14px; text-align: center;">
+                > PAYMENT STATUS: PENDING<br>
+                > AWAITING PAYMENT UPDATE...
+            </p>
+        </td>
+    </tr>
+</table>
+{% endblock %}

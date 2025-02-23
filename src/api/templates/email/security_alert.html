@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td>
+            <h2 style="color: #FF0000; font-size: 20px; margin-bottom: 20px; text-align: center;">
+                ⚠️ SECURITY ALERT ⚠️
+            </h2>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #FF0000; margin-bottom: 20px;">
+                > SECURITY PROTOCOL TRIGGERED<br>
+                > ALERT TYPE: {{ alert_type|upper }}<br>
+                > IMMEDIATE ATTENTION REQUIRED
+            </p>
+            <p style="color: #00FF00; margin-bottom: 20px;">
+                We detected a security-related event on your {{ app_name }} account. Please review the details below.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #FF0000; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #FF0000; font-size: 16px; margin-bottom: 15px;">
+                    EVENT DETAILS:
+                </h3>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 15px;">
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Event Type:</td>
+                        <td style="padding: 8px 0; color: #FF0000; text-align: right;">{{ alert_type }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Timestamp:</td>
+                        <td style="padding: 8px 0; color: #FF0000; text-align: right;">{{ timestamp }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">IP Address:</td>
+                        <td style="padding: 8px 0; color: #FF0000; text-align: right;">{{ ip_address }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Location:</td>
+                        <td style="padding: 8px 0; color: #FF0000; text-align: right;">{{ location }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Device:</td>
+                        <td style="padding: 8px 0; color: #FF0000; text-align: right;">{{ device }}</td>
+                    </tr>
+                </table>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" style="padding: 20px 0;">
+            <!-- Security Settings Button -->
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                <tr>
+                    <td align="center" style="background-color: #660000; padding: 2px; border-radius: 4px;">
+                        <a href="{{ security_url }}" 
+                           style="background-color: #000000; border: 1px solid #FF0000; color: #FF0000; display: inline-block; padding: 12px 24px; text-decoration: none; font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: bold; border-radius: 3px;">
+                            REVIEW SECURITY SETTINGS
+                        </a>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #FF0000; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #FF0000; font-size: 16px; margin-bottom: 15px;">
+                    RECOMMENDED ACTIONS:
+                </h3>
+                <ul style="color: #00FF00; margin: 0; padding-left: 20px;">
+                    <li style="margin-bottom: 10px;">Review your recent account activity</li>
+                    <li style="margin-bottom: 10px;">Update your password if unauthorized access is suspected</li>
+                    <li style="margin-bottom: 10px;">Enable two-factor authentication if not already active</li>
+                    <li>Contact support immediately if you don't recognize this activity</li>
+                </ul>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #404040; padding: 15px;">
+                <p style="color: #808080; font-size: 14px; margin: 0;">
+                    If you did not perform this action, please:
+                </p>
+                <ol style="color: #FF0000; margin: 10px 0 0 20px; padding: 0;">
+                    <li>Change your password immediately</li>
+                    <li>Review all active sessions</li>
+                    <li>Contact our security team at {{ support_email }}</li>
+                </ol>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #FF0000; font-size: 14px; text-align: center;">
+                > SECURITY ALERT ACTIVE<br>
+                > AWAITING USER VERIFICATION
+            </p>
+        </td>
+    </tr>
+</table>
+{% endblock %}

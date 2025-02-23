@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ subject }}</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* Reset styles for email clients */
+        body, p, h1, h2, h3, h4, h5, h6 {
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        /* Ensure responsive design */
+        @media only screen and (max-width: 600px) {
+            .container {
+                width: 100% !important;
+            }
+            .content {
+                padding: 20px !important;
+            }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0C0C0C; color: #00FF00; font-family: 'Courier New', Courier, monospace; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; line-height: 1.6;">
+    <!-- Main Container -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #0C0C0C;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <!-- Content Container -->
+                <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" style="background-color: #1A1A1A; border: 1px solid #00FF00; border-radius: 8px; box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 30px; border-bottom: 1px solid #00FF00;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center">
+                                        <h1 style="color: #00FF00; font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
+                                            {{ app_name }}
+                                        </h1>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td class="content" style="padding: 40px;">
+                            {% block content %}{% endblock %}
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px; border-top: 1px solid #00FF00;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding-bottom: 20px;">
+                                        <p style="color: #808080; font-size: 14px;">
+                                            If you have any questions, please contact us at<br>
+                                            <a href="mailto:{{ support_email }}" style="color: #00FF00; text-decoration: none;">{{ support_email }}</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center">
+                                        <p style="color: #808080; font-size: 12px;">
+                                            &copy; {{ year }} {{ app_name }}. All rights reserved.<br>
+                                            <span style="color: #404040;">This is an automated message, please do not reply.</span>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Unsubscribe Footer -->
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td align="center" style="padding: 20px 0;">
+                            <p style="color: #404040; font-size: 12px;">
+                                You received this email because you have an account with {{ app_name }}.<br>
+                                To unsubscribe from these emails, visit your <a href="{{ settings.FRONTEND_URL }}/account/notifications" style="color: #00FF00; text-decoration: none;">notification settings</a>.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

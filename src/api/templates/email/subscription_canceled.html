@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td>
+            <h2 style="color: #00FF00; font-size: 20px; margin-bottom: 20px; text-align: center;">
+                Subscription Status Update
+            </h2>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #00FF00; margin-bottom: 20px;">
+                > SUBSCRIPTION UPDATE RECEIVED<br>
+                > PROCESSING CANCELLATION REQUEST<br>
+                > STATUS: CONFIRMED
+            </p>
+            <p style="color: #00FF00; margin-bottom: 20px;">
+                We've processed your request to cancel your {{ plan_name }} subscription. Thank you for being a premium member of {{ app_name }}.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #00FF00; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #00FF00; font-size: 16px; margin-bottom: 15px;">
+                    SUBSCRIPTION STATUS:
+                </h3>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 15px;">
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Plan:</td>
+                        <td style="padding: 8px 0; color: #00FF00; text-align: right;">{{ plan_name }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Access Until:</td>
+                        <td style="padding: 8px 0; color: #00FF00; text-align: right;">{{ end_date }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Status:</td>
+                        <td style="padding: 8px 0; color: #00FF00; text-align: right;">Canceled</td>
+                    </tr>
+                </table>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #404040; padding: 20px;">
+                <h3 style="color: #00FF00; font-size: 16px; margin-bottom: 15px;">
+                    WHAT THIS MEANS:
+                </h3>
+                <ul style="color: #808080; margin: 0; padding-left: 20px;">
+                    <li style="margin-bottom: 10px;">Your premium access will continue until {{ end_date }}</li>
+                    <li style="margin-bottom: 10px;">No further charges will be made to your account</li>
+                    <li style="margin-bottom: 10px;">Your account will revert to basic access after this date</li>
+                    <li>Your research history and data will be preserved</li>
+                </ul>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #00FF00; padding: 20px; text-align: center;">
+                <p style="color: #00FF00; margin-bottom: 15px;">
+                    Changed your mind? You can reactivate your subscription anytime:
+                </p>
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                    <tr>
+                        <td align="center" style="background-color: #006600; padding: 2px; border-radius: 4px;">
+                            <a href="{{ resubscribe_url }}" 
+                               style="background-color: #000000; border: 1px solid #00FF00; color: #00FF00; display: inline-block; padding: 12px 24px; text-decoration: none; font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: bold; border-radius: 3px;">
+                                REACTIVATE SUBSCRIPTION
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #404040; padding: 15px;">
+                <p style="color: #808080; font-size: 14px; margin-bottom: 10px;">
+                    We'd love to hear your feedback! What made you decide to cancel?
+                </p>
+                <p style="color: #808080; font-size: 14px; margin: 0;">
+                    Reply to this email or contact us at {{ support_email }} to share your thoughts.
+                </p>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #00FF00; font-size: 14px; text-align: center;">
+                > SUBSCRIPTION STATUS: CANCELED<br>
+                > PREMIUM ACCESS ACTIVE UNTIL: {{ end_date }}<br>
+                > THANK YOU FOR YOUR MEMBERSHIP
+            </p>
+        </td>
+    </tr>
+</table>
+{% endblock %}

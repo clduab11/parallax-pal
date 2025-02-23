@@ -1,150 +1,242 @@
-from typing import Any, Dict, Optional
-from pydantic import BaseSettings, PostgresDsn, validator
+from typing import Dict, Any
+from pydantic import BaseSettings, PostgresDsn, HttpUrl, EmailStr, validator
 import os
 from functools import lru_cache
 
 class Settings(BaseSettings):
     # Application
-    ENV: str = "development"
-    DEBUG: bool = True
-    API_HOST: str = "0.0.0.0"
-    API_PORT: int = 8000
-    FRONTEND_URL: str = "http://localhost:3000"
-
-    # Security
+    APP_NAME: str = "Parallax Pal"
+    VERSION: str = "1.0.0"
+    DEBUG: bool = False
+    ENVIRONMENT: str = "development"
     SECRET_KEY: str
+    JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    ALGORITHM: str = "HS256"
-
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    
     # Database
     DATABASE_URL: PostgresDsn
-    DATABASE_POOL_SIZE: int = 20
+    DATABASE_POOL_SIZE: int = 5
     DATABASE_MAX_OVERFLOW: int = 10
-
-    # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
-    REDIS_MAX_CONNECTIONS: int = 10
-    CACHE_TTL: int = 3600
-
-    # Research
-    MAX_CONCURRENT_TASKS: int = 5
-    TASK_TIMEOUT: int = 300
-    MAX_RETRIES: int = 3
-    RETRY_DELAY: int = 5
-
+    
+    # Redis Cache
+    REDIS_URL: str
+    REDIS_PASSWORD: str = None
+    REDIS_DB: int = 0
+    
+    # Frontend
+    FRONTEND_URL: HttpUrl
+    CORS_ORIGINS: list[str] = ["*"]
+    
+    # OAuth Providers
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URI: HttpUrl
+    
+    GITHUB_CLIENT_ID: str
+    GITHUB_CLIENT_SECRET: str
+    GITHUB_REDIRECT_URI: HttpUrl
+    
+    FACEBOOK_CLIENT_ID: str
+    FACEBOOK_CLIENT_SECRET: str
+    FACEBOOK_REDIRECT_URI: HttpUrl
+    
+    INSTAGRAM_CLIENT_ID: str
+    INSTAGRAM_CLIENT_SECRET: str
+    INSTAGRAM_REDIRECT_URI: HttpUrl
+    
+    # Email
+    SMTP_HOST: str
+    SMTP_PORT: int
+    SMTP_USER: str
+    SMTP_PASSWORD: str
+    SMTP_FROM_EMAIL: EmailStr
+    SMTP_FROM_NAME: str = "Parallax Pal"
+    
+    # Stripe
+    STRIPE_SECRET_KEY: str
+    STRIPE_PUBLISHABLE_KEY: str
+    STRIPE_WEBHOOK_SECRET: str
+    
+    # GPU Settings
+    GPU_MEMORY_THRESHOLD: float = 0.9  # 90% memory usage threshold
+    DEFAULT_MODEL: str = "llama2"
+    OLLAMA_API_URL: str = "http://localhost:11434"
+    
     # Monitoring
+    SENTRY_DSN: str = None
     LOG_LEVEL: str = "INFO"
-    PROMETHEUS_PORT: int = 9090
     ENABLE_METRICS: bool = True
-    METRICS_PREFIX: str = "parallaxpal_"
-
-    # Rate Limiting
-    RATE_LIMIT_REQUESTS: int = 100
-    RATE_LIMIT_PERIOD: int = 60
-
-    # OpenAI
-    OPENAI_API_KEY: str
-    OPENAI_MODEL: str = "gpt-4"
-    MAX_TOKENS: int = 2000
-
-    # Search Engine
-    SEARCH_RESULTS_LIMIT: int = 10
-    SEARCH_TIMEOUT: int = 30
-
-    # Error Reporting
-    ENABLE_ERROR_REPORTING: bool = True
-    ERROR_REPORTING_EMAIL: Optional[str] = None
-
-    # Documentation
-    DOCS_URL: str = "/api/docs"
-    REDOC_URL: str = "/api/redoc"
-    OPENAPI_URL: str = "/api/openapi.json"
-
-    # Feature Flags
-    ENABLE_CACHING: bool = True
-    ENABLE_RATE_LIMITING: bool = True
-    ENABLE_AUTH: bool = True
-    ENABLE_MONITORING: bool = True
-
-    # Admin
-    ADMIN_EMAIL: str
-    ADMIN_USERNAME: str = "admin"
-
-    @validator("DATABASE_URL", pre=True)
-    def validate_database_url(cls, v: Optional[str]) -> Any:
-        """Validate and possibly modify the database URL."""
-        if isinstance(v, str):
-            return v
-        return PostgresDsn.build(
-            scheme="postgresql",
-            user=os.getenv("DB_USER", "postgres"),
-            password=os.getenv("DB_PASSWORD", "postgres"),
-            host=os.getenv("DB_HOST", "localhost"),
-            port=os.getenv("DB_PORT", "5432"),
-            path=f"/{os.getenv('DB_NAME', 'parallaxpal')}"
-        )
-
+    METRICS_PORT: int = 9090
+    
+    # Security
+    ALLOWED_HOSTS: list[str] = ["*"]
+    SSL_KEYFILE: str = None
+    SSL_CERTFILE: str = None
+    SECURE_HEADERS: bool = True
+    RATE_LIMIT_PER_MINUTE: int = 60
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
 
+    @validator("DATABASE_URL", pre=True)
+    def validate_database_url(cls, v: str) -> str:
+        """Ensure DATABASE_URL is properly formatted"""
+        if isinstance(v, str):
+            return v
+        return PostgresDsn.build(
+            scheme="postgresql",
+            user=v.get("user"),
+            password=v.get("password"),
+            host=v.get("host"),
+            port=v.get("port"),
+            path=f"/{v.get('database')}"
+        )
+
+    @validator("REDIS_URL", pre=True)
+    def validate_redis_url(cls, v: str) -> str:
+        """Ensure REDIS_URL is properly formatted"""
+        if isinstance(v, str):
+            return v
+        return f"redis://{v.get('host')}:{v.get('port')}/{v.get('db', 0)}"
+
+    @validator("CORS_ORIGINS", pre=True)
+    def validate_cors_origins(cls, v: Any) -> list[str]:
+        """Convert CORS_ORIGINS to list"""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",")]
+        return v
+
+    @validator("ALLOWED_HOSTS", pre=True)
+    def validate_allowed_hosts(cls, v: Any) -> list[str]:
+        """Convert ALLOWED_HOSTS to list"""
+        if isinstance(v, str):
+            return [host.strip() for host in v.split(",")]
+        return v
+
 @lru_cache()
 def get_settings() -> Settings:
-    """
-    Create cached settings instance.
-    Uses LRU cache to avoid reading the .env file for every request.
-    """
+    """Get cached settings instance"""
     return Settings()
 
-# Initialize global settings instance
-settings = get_settings()
-
 def get_db_url() -> str:
-    """Get database URL with SSL mode based on environment."""
-    if settings.ENV == "production":
-        return str(settings.DATABASE_URL) + "?sslmode=require"
+    """Get database URL with proper formatting"""
+    settings = get_settings()
     return str(settings.DATABASE_URL)
 
-def is_production() -> bool:
-    """Check if running in production environment."""
-    return settings.ENV == "production"
-
-def get_cors_origins() -> list:
-    """Get CORS origins based on environment."""
-    if is_production():
-        return [settings.FRONTEND_URL]
-    return ["*"]  # Allow all origins in development
-
-def get_redis_settings() -> Dict[str, Any]:
-    """Get Redis connection settings."""
-    return {
-        "url": settings.REDIS_URL,
-        "max_connections": settings.REDIS_MAX_CONNECTIONS,
-        "default_ttl": settings.CACHE_TTL
+# Environment-specific settings
+ENVIRONMENT_SETTINGS: Dict[str, Dict[str, Any]] = {
+    "development": {
+        "DEBUG": True,
+        "LOG_LEVEL": "DEBUG",
+        "ENABLE_METRICS": False,
+    },
+    "staging": {
+        "DEBUG": False,
+        "LOG_LEVEL": "INFO",
+        "CORS_ORIGINS": ["https://staging.parallaxpal.com"],
+        "ALLOWED_HOSTS": ["staging.parallaxpal.com"],
+    },
+    "production": {
+        "DEBUG": False,
+        "LOG_LEVEL": "WARNING",
+        "SECURE_HEADERS": True,
+        "CORS_ORIGINS": ["https://parallaxpal.com"],
+        "ALLOWED_HOSTS": ["parallaxpal.com"],
     }
+}
 
-def get_monitoring_settings() -> Dict[str, Any]:
-    """Get monitoring configuration."""
-    return {
-        "prometheus_port": settings.PROMETHEUS_PORT,
-        "enable_metrics": settings.ENABLE_METRICS,
-        "metrics_prefix": settings.METRICS_PREFIX,
-        "log_level": settings.LOG_LEVEL
-    }
+# Load environment-specific settings
+settings = get_settings()
+env_settings = ENVIRONMENT_SETTINGS.get(settings.ENVIRONMENT, {})
+for key, value in env_settings.items():
+    setattr(settings, key, value)
 
-def get_security_settings() -> Dict[str, Any]:
-    """Get security-related settings."""
-    return {
-        "secret_key": settings.SECRET_KEY,
-        "algorithm": settings.ALGORITHM,
-        "token_expire_minutes": settings.ACCESS_TOKEN_EXPIRE_MINUTES
+# OAuth configurations
+OAUTH_SETTINGS = {
+    "google": {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+        "redirect_uri": str(settings.GOOGLE_REDIRECT_URI),
+        "scope": ["openid", "email", "profile"],
+    },
+    "github": {
+        "client_id": settings.GITHUB_CLIENT_ID,
+        "client_secret": settings.GITHUB_CLIENT_SECRET,
+        "redirect_uri": str(settings.GITHUB_REDIRECT_URI),
+        "scope": ["read:user", "user:email"],
+    },
+    "facebook": {
+        "client_id": settings.FACEBOOK_CLIENT_ID,
+        "client_secret": settings.FACEBOOK_CLIENT_SECRET,
+        "redirect_uri": str(settings.FACEBOOK_REDIRECT_URI),
+        "scope": ["email", "public_profile"],
+    },
+    "instagram": {
+        "client_id": settings.INSTAGRAM_CLIENT_ID,
+        "client_secret": settings.INSTAGRAM_CLIENT_SECRET,
+        "redirect_uri": str(settings.INSTAGRAM_REDIRECT_URI),
+        "scope": ["basic"],
     }
+}
 
-def get_feature_flags() -> Dict[str, bool]:
-    """Get feature flag settings."""
-    return {
-        "caching": settings.ENABLE_CACHING,
-        "rate_limiting": settings.ENABLE_RATE_LIMITING,
-        "auth": settings.ENABLE_AUTH,
-        "monitoring": settings.ENABLE_MONITORING
-    }
+# Example .env file template
+ENV_TEMPLATE = """
+# Application
+APP_NAME=Parallax Pal
+DEBUG=false
+ENVIRONMENT=development
+SECRET_KEY=your-secret-key
+JWT_ALGORITHM=HS256
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/parallaxpal
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# Frontend
+FRONTEND_URL=http://localhost:3000
+
+# OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
+
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+GITHUB_REDIRECT_URI=http://localhost:3000/auth/github/callback
+
+FACEBOOK_CLIENT_ID=your-facebook-client-id
+FACEBOOK_CLIENT_SECRET=your-facebook-client-secret
+FACEBOOK_REDIRECT_URI=http://localhost:3000/auth/facebook/callback
+
+INSTAGRAM_CLIENT_ID=your-instagram-client-id
+INSTAGRAM_CLIENT_SECRET=your-instagram-client-secret
+INSTAGRAM_REDIRECT_URI=http://localhost:3000/auth/instagram/callback
+
+# Email
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-specific-password
+SMTP_FROM_EMAIL=noreply@parallaxpal.com
+
+# Stripe
+STRIPE_SECRET_KEY=your-stripe-secret-key
+STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
+STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
+
+# Monitoring
+SENTRY_DSN=your-sentry-dsn
+"""
+
+def generate_env_file():
+    """Generate .env file template"""
+    with open(".env.example", "w") as f:
+        f.write(ENV_TEMPLATE.strip())
+
+if __name__ == "__main__":
+    # Generate .env.example file when run directly
+    generate_env_file()

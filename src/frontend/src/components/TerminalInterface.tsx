@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, FormEvent, ChangeEvent } from 'react';
 import io from 'socket.io-client';
 import type { SocketClient } from '../types/socket';
-import styles from '../styles/Terminal.module.css';
 import {
   TerminalOutput,
   TerminalProps,
@@ -122,23 +121,23 @@ Type 'help' for available commands.`,
   };
 
   const renderWebResult = (result: WebResult) => (
-    <div className={styles.webResult}>
-      <h3>{result.title}</h3>
-      <div className={styles.url}>{result.url}</div>
-      <div className={styles.snippet}>{result.snippet}</div>
-      <div className={styles.source}>Source: {result.source}</div>
+    <div className="bg-terminal-gray-dark border border-terminal-green p-4 rounded my-2">
+      <h3 className="text-terminal-amber font-bold">{result.title}</h3>
+      <div className="text-terminal-green opacity-70 text-sm">{result.url}</div>
+      <div className="my-2 text-terminal-green">{result.snippet}</div>
+      <div className="text-terminal-green opacity-50 text-sm">Source: {result.source}</div>
     </div>
   );
 
   const renderAIAnalysis = (analysis: AIAnalysis) => (
-    <div className={styles.aiAnalysis}>
-      <div className={styles.modelName}>
-        {analysis.model.toUpperCase()}
-        <span className={styles.confidence}>
+    <div className="bg-terminal-gray-dark border border-terminal-green p-4 rounded my-2">
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-terminal-amber font-bold">{analysis.model.toUpperCase()}</span>
+        <span className="text-terminal-green opacity-70">
           Confidence: {(analysis.confidence * 100).toFixed(1)}%
         </span>
       </div>
-      <div className={styles.analysis}>{analysis.analysis}</div>
+      <div className="text-terminal-green whitespace-pre-wrap">{analysis.analysis}</div>
     </div>
   );
 
@@ -225,16 +224,21 @@ Processing : ${isProcessing ? 'ACTIVE' : 'IDLE'}`);
   }, [outputs]);
 
   return (
-    <div className={styles.terminalContainer}>
-      <div className={styles.terminalHeader}>
-        <span>
+    <div className="flex flex-col h-full">
+      <div className="flex justify-between items-center p-2 border-b border-terminal-green">
+        <span className="text-terminal-green">
           INTERFACE: {mode.toUpperCase()}
           {subscription.tier === 'premium' && (
-            <span className={styles.premiumBadge}>PREMIUM</span>
+            <span className="ml-2 px-2 py-1 bg-terminal-green text-terminal-black text-xs rounded">
+              PREMIUM
+            </span>
           )}
         </span>
         <button
-          className={`${styles.modeToggle} ${subscription.tier !== 'premium' ? styles.disabled : ''}`}
+          className={`px-4 py-1 border border-terminal-green rounded
+            ${subscription.tier === 'premium' 
+              ? 'hover:bg-terminal-green hover:text-terminal-black transition-colors duration-200' 
+              : 'opacity-50 cursor-not-allowed'}`}
           onClick={handleModeToggle}
           disabled={subscription.tier !== 'premium'}
         >
@@ -244,17 +248,22 @@ Processing : ${isProcessing ? 'ACTIVE' : 'IDLE'}`);
 
       <div 
         ref={outputContainerRef}
-        className={styles.terminalOutput}
+        className="flex-1 overflow-y-auto p-4 font-mono text-sm"
       >
         {outputs.map((output: TerminalOutput) => (
           <div 
             key={output.id} 
-            className={`${styles.terminalLine} ${styles[output.type]}`}
+            className={`mb-2 ${
+              output.type === 'error' ? 'text-red-500' :
+              output.type === 'system' ? 'text-terminal-amber' :
+              output.type === 'input' ? 'text-terminal-green font-bold' :
+              'text-terminal-green'
+            }`}
           >
-            <span className={styles.timestamp}>
+            <span className="text-terminal-green opacity-50">
               [{new Date(output.timestamp).toLocaleTimeString()}]
             </span>
-            {output.text}
+            <pre className="whitespace-pre-wrap font-mono mt-1">{output.text}</pre>
             {output.webResults && output.webResults.map((result, idx) => (
               <div key={idx}>{renderWebResult(result)}</div>
             ))}
@@ -264,20 +273,24 @@ Processing : ${isProcessing ? 'ACTIVE' : 'IDLE'}`);
           </div>
         ))}
         {isProcessing && (
-          <div className={styles.processing}>PROCESSING QUERY ACROSS MULTIPLE MODELS...</div>
+          <div className="text-terminal-amber animate-pulse">
+            PROCESSING QUERY ACROSS MULTIPLE MODELS...
+          </div>
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className={styles.inputForm}>
-        <span className={styles.prompt}>&gt;</span>
-        <input 
-          type="text"
-          value={input}
-          onChange={handleInputChange}
-          className={styles.input}
-          placeholder={`Enter query (${mode.toUpperCase()} MODE)...`}
-          disabled={isProcessing}
-        />
+      <form onSubmit={handleSubmit} className="p-2 border-t border-terminal-green">
+        <div className="flex items-center">
+          <span className="text-terminal-green mr-2">&gt;</span>
+          <input 
+            type="text"
+            value={input}
+            onChange={handleInputChange}
+            className="terminal-input flex-1"
+            placeholder={`Enter query (${mode.toUpperCase()} MODE)...`}
+            disabled={isProcessing}
+          />
+        </div>
       </form>
     </div>
   );
