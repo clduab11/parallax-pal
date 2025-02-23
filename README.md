@@ -21,12 +21,12 @@ Parallax Pal is your intelligent research assistant that transforms complex data
 - **24/7 Monitoring** - Real-time system health checks
 
 ### 🎯 Perfect For
-- 📊 Market Research
-- 📈 Competitive Analysis
-- 📚 Academic Research
-- 🔍 Data Mining
-- 📑 Document Analysis
-- 🌐 Web Intelligence
+📊 Market Research
+📈 Competitive Analysis
+📚 Academic Research
+🔍 Data Mining
+📑 Document Analysis
+🌐 Web Intelligence
 
 
 
