@@ -77,10 +77,10 @@ Choose the plan that works for you:
 
 - Enterprise-grade security
 - Data encryption at rest and in transit
-- EU USERS: WHILE DATA IS ANONYMIZED/TELEMETRIZED, I CANNOT GUARANTEE COMPLIANCE WITH GDPR.
+- EU USERS: WHILE DATA IS ANONYMIZED/TELEMETRIZED, I CANNOT GUARANTEE COMPLIANCE WITH GDPR
 - Regular security audits
 - Clear, easy opt-outs
-- Innovative, modularized data collection for academic/scientific purposes, you share your data your way!
+- Innovative, modularized data collection for academic/scientific purposes; you share your data your way
 
 🔧 Looking for technical details? Check out our [Technical Documentation](TECHNICAL.md)
 
