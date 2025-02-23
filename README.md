@@ -28,6 +28,8 @@ Parallax Pal is your intelligent research assistant that transforms complex data
 - 📑 Document Analysis
 - 🌐 Web Intelligence
 
+
+
 ## 💎 Plans That Fit Your Needs
 
 ### Pay-As-You-Go
@@ -40,6 +42,8 @@ or...
 
 ### Monthly Subscriptions
 Choose the plan below that works for you!
+
+
 
 ## Key Features
 
@@ -78,16 +82,12 @@ Choose the plan below that works for you!
 - Export capabilities
 - Custom reporting
 
+
+
 ## 💎 Pricing
 
 Choose the plan that fits your needs:
 
-### 🎯 Basic Plan - Free
-- Access to basic AI models
-- Standard processing speed
-- Ad-supported
-- Community support
-  
 =======
 #### 🆓 Free Tier
 - Basic research capabilities
@@ -95,7 +95,6 @@ Choose the plan that fits your needs:
 - Community support
 - Ad-supported
 - $0/month
->>>>>>> e0ff6e8 (docs: Update README with marketing focus and new pricing)
 
 #### ⭐ Basic
 - Ad-free experience
@@ -103,7 +102,7 @@ Choose the plan that fits your needs:
 - Basic analytics
 - Increased usage per month
 - Limited continuous research per month
-- $49/month
+- $29.99/month
 
 #### 🌟 Pro
 - Advanced research features
@@ -111,12 +110,12 @@ Choose the plan that fits your needs:
 - Priority support
 - Unlimited usage
 - Increased continuous research per month
-- $99/month
+- $79.99/month
 
-### ⚡ Privacy Plan - $699 one-time charge
+### ⚡ Privacy Plan - $999 one-time charge
 - All Pro features, plus...
 - Local model configuration w/ unlimited continuous research
-- 3 months free of Pro usage
+- 4 months free of Pro usage
 =======
 
 *All annual subscriptions get 2 months free!*
