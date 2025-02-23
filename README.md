@@ -76,6 +76,7 @@ Generating visualizations...
 - Priority query handling
 - Extended API access
 - Custom model configuration
+- Local model integration via Ollama
 
 ### 📊 Enhanced Analytics
 - Detailed research metrics
@@ -90,8 +91,9 @@ Choose the plan that fits your needs:
 ### 🎯 Basic Plan - Free
 - Access to basic AI models
 - Standard processing speed
-- 100 queries per month
+- Ad-supported
 - Community support
+- 
 
 ### 🚀 Pro Plan - $29/month
 - All basic features
@@ -101,22 +103,14 @@ Choose the plan that fits your needs:
 - Email support
 - Export capabilities
 
-### ⚡ Premium Plan - $99/month
+### ⚡ Premium Plan - $499/month
 - All Pro features
 - GPU acceleration
 - Unlimited queries
-- Custom model configuration
+- Local model configuration via Ollama
 - Priority support
 - Team collaboration
 - API access
-
-### 🏢 Enterprise Plan - Custom Pricing
-- All Premium features
-- Custom model training
-- Dedicated support
-- SLA guarantees
-- On-premise deployment
-- Custom integrations
 
 *Annual subscriptions get 2 months free!*
 
