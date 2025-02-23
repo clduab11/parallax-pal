@@ -1,14 +1,14 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import logging
-from llm_wrapper import LLMWrapper, LLMError
-from llm_response_parser import UltimateLLMResponseParser
-from search_engine import EnhancedSelfImprovingSearch, SearchError
-from web_scraper import MultiSearcher, WebScraperError, get_web_content, can_fetch
+from .llm_wrapper import LLMWrapper, LLMError, AIModel
+from .llm_response_parser import UltimateLLMResponseParser
+from .search_engine import EnhancedSelfImprovingSearch, SearchError
+from .web_scraper import MultiSearcher, WebScraperError, get_web_content, can_fetch
 
 logger = logging.getLogger(__name__)
 
 class ResearchCore:
-    """Core research functionality extracted from the original CLI application"""
+    """Core research functionality with multi-model AI analysis"""
     
     def __init__(self):
         self.llm = LLMWrapper()
@@ -18,14 +18,16 @@ class ResearchCore:
     async def process_research_query(
         self,
         query: str,
+        use_ollama: bool = False,
         continuous_mode: bool = False,
         max_iterations: int = 3
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
-        Process a research query and return results
+        Process a research query using multiple AI models
         
         Args:
             query: The research query to process
+            use_ollama: Whether to include Ollama model in analysis
             continuous_mode: Whether to use continuous research mode
             max_iterations: Maximum number of research iterations
             
@@ -33,70 +35,126 @@ class ResearchCore:
             Dict containing research results and metadata
         """
         try:
-            logger.info(f"Starting research for query: {query}")
+            logger.info(f"Starting multi-model research for query: {query}")
             
             # Initial search
             search_results = await self.search_engine.search(query)
             
-            # Process and analyze results
+            # Process and analyze results with multiple models
             analyzed_data = []
+            web_results = []
+            
             for result in search_results:
                 content = await get_web_content(result['url'])
                 if content:
-                    analysis = await self.llm.analyze(
+                    # Store web result
+                    web_results.append({
+                        'title': result.get('title', ''),
+                        'url': result['url'],
+                        'snippet': content[:200] + '...',  # Preview snippet
+                        'source': result.get('source', 'web')
+                    })
+                    
+                    # Get analysis from all AI models
+                    analyses = await self.llm.analyze_with_all_models(
                         query=query,
                         content=content,
-                        url=result['url']
+                        url=result['url'],
+                        use_ollama=use_ollama
                     )
+                    
                     analyzed_data.append({
                         'url': result['url'],
-                        'analysis': analysis
+                        'analyses': analyses
                     })
             
-            # Generate synthesis
-            synthesis = await self.llm.synthesize(
+            # Generate synthesis using all models
+            synthesis_result = await self.llm.synthesize(
                 query=query,
-                analyses=analyzed_data
+                analyses=[
+                    analysis 
+                    for data in analyzed_data 
+                    for analysis in data['analyses']
+                ],
+                use_ollama=use_ollama
             )
             
             # If in continuous mode, perform additional iterations
             if continuous_mode:
                 for i in range(max_iterations - 1):
-                    # Generate follow-up questions
-                    follow_ups = await self.llm.generate_follow_up_questions(
-                        synthesis=synthesis,
-                        previous_queries=[query]
+                    # Generate follow-up questions from all models
+                    follow_up_results = await self.llm.generate_follow_up_questions(
+                        synthesis=synthesis_result['synthesis'],
+                        previous_queries=[query],
+                        use_ollama=use_ollama
                     )
                     
+                    # Select questions with highest confidence
+                    best_questions = max(follow_up_results, key=lambda x: x['confidence'])
+                    
                     # Process each follow-up
-                    for follow_up in follow_ups[:2]:  # Limit to top 2 follow-ups
+                    for follow_up in best_questions['questions'][:2]:  # Limit to top 2 follow-ups
                         sub_results = await self.search_engine.search(follow_up)
                         for result in sub_results:
                             content = await get_web_content(result['url'])
                             if content:
-                                analysis = await self.llm.analyze(
+                                # Store web result
+                                web_results.append({
+                                    'title': result.get('title', ''),
+                                    'url': result['url'],
+                                    'snippet': content[:200] + '...',
+                                    'source': result.get('source', 'web')
+                                })
+                                
+                                # Get analysis from all models
+                                analyses = await self.llm.analyze_with_all_models(
                                     query=follow_up,
                                     content=content,
-                                    url=result['url']
+                                    url=result['url'],
+                                    use_ollama=use_ollama
                                 )
+                                
                                 analyzed_data.append({
                                     'url': result['url'],
-                                    'analysis': analysis
+                                    'analyses': analyses
                                 })
                     
                     # Update synthesis with new information
-                    synthesis = await self.llm.synthesize(
+                    synthesis_result = await self.llm.synthesize(
                         query=query,
-                        analyses=analyzed_data
+                        analyses=[
+                            analysis 
+                            for data in analyzed_data 
+                            for analysis in data['analyses']
+                        ],
+                        use_ollama=use_ollama
                     )
+            
+            # Collect all model analyses
+            ai_analyses = []
+            for data in analyzed_data:
+                for analysis in data['analyses']:
+                    ai_analyses.append({
+                        'model': analysis['model'],
+                        'analysis': analysis['analysis'],
+                        'confidence': analysis['confidence']
+                    })
             
             return {
                 'query': query,
-                'synthesis': synthesis,
-                'sources': [data['url'] for data in analyzed_data],
-                'source_count': len(analyzed_data),
+                'synthesis': synthesis_result['synthesis'],
+                'web_results': web_results,
+                'ai_analyses': ai_analyses,
+                'source_count': len(web_results),
                 'continuous_mode': continuous_mode,
-                'iterations': max_iterations if continuous_mode else 1
+                'iterations': max_iterations if continuous_mode else 1,
+                'models_used': [
+                    model.value for model in [
+                        AIModel.OPENAI,
+                        AIModel.ANTHROPIC,
+                        AIModel.GEMINI
+                    ] + ([AIModel.OLLAMA] if use_ollama else [])
+                ]
             }
             
         except Exception as e:

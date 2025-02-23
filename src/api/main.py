@@ -711,6 +711,31 @@ async def send_reset_email(email: str, token: str):
     # Implementation similar to send_verification_email
     pass
 
+# GPU and Model Management Endpoints
+@app.get("/api/gpu-status",
+    response_model=Dict[str, Any],
+    tags=["gpu"],
+    summary="Get GPU status",
+    description="Get current GPU status and model recommendations")
+@monitor_endpoint("get_gpu_status")
+async def get_gpu_status():
+    from .llm_wrapper import llm
+    return llm.get_gpu_status()
+
+@app.post("/api/update-model",
+    response_model=Dict[str, str],
+    tags=["gpu"],
+    summary="Update Ollama model",
+    description="Update the Ollama model being used")
+@monitor_endpoint("update_model")
+async def update_model(model_data: Dict[str, str]):
+    from .llm_wrapper import llm
+    try:
+        llm.update_ollama_model(model_data["model"])
+        return {"message": f"Successfully updated model to {model_data['model']}"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # Research Endpoints
 @app.post("/api/research/tasks",
     response_model=Dict[str, Any],

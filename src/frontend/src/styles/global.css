@@ -1,0 +1,130 @@
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: 'Share Tech Mono';
+  src: url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: #001800;
+  font-family: 'Share Tech Mono', monospace;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Fallout-style CRT effect */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* App container */
+.app-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Selection styling */
+::selection {
+  background: rgba(46, 201, 39, 0.3);
+  color: #2ec927;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #001800;
+  border: 1px solid #2ec927;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2ec927;
+  border: 1px solid #2ec927;
+}
+
+/* Focus outline */
+:focus {
+  outline: 2px solid #2ec927;
+  outline-offset: -2px;
+}
+
+/* Disable text selection for certain elements */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Loading animation */
+@keyframes loading {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+.loading {
+  animation: loading 1.5s infinite;
+  color: #2ec927;
+}
+
+/* Pip-Boy-style text shadows */
+.text-glow {
+  text-shadow: 0 0 10px rgba(46, 201, 39, 0.7);
+}
+
+/* Screen flicker effect */
+@keyframes flicker {
+  0% { opacity: 0.93; }
+  5% { opacity: 0.95; }
+  10% { opacity: 0.94; }
+  15% { opacity: 0.92; }
+  20% { opacity: 0.95; }
+  25% { opacity: 0.93; }
+  30% { opacity: 0.94; }
+  35% { opacity: 0.93; }
+  40% { opacity: 0.95; }
+  45% { opacity: 0.94; }
+  50% { opacity: 0.92; }
+  55% { opacity: 0.93; }
+  60% { opacity: 0.94; }
+  65% { opacity: 0.93; }
+  70% { opacity: 0.95; }
+  75% { opacity: 0.93; }
+  80% { opacity: 0.94; }
+  85% { opacity: 0.93; }
+  90% { opacity: 0.95; }
+  95% { opacity: 0.94; }
+  100% { opacity: 0.93; }
+}
+
+.screen-flicker {
+  animation: flicker 0.3s infinite;
+}

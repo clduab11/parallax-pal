@@ -41,25 +41,28 @@ Choose the plan that works for you:
 
 #### 🆓 Free Tier
 - Basic research capabilities
+- Limited usage per month
 - Community support
 - Ad-supported
 - $0/month
-- Annonymized/telemetrized data will be collected
 
 #### ⭐ Basic
 - Ad-free experience
 - Email support
 - Basic analytics
+- Increased usage per month
 - $49/month
 
 #### 🌟 Pro
 - Advanced research features
 - GPU acceleration
 - Priority support
+- Unlimited usage
 - $99/month
 
 #### 💎 Enterprise
 - Custom solutions
+- Ollama/local-model support for uncapped inference
 - Dedicated support
 - White-label options
 - Starting at $499/month
@@ -74,10 +77,12 @@ Choose the plan that works for you:
 
 - Enterprise-grade security
 - Data encryption at rest and in transit
-- GDPR compliant
+- EU USERS: WHILE DATA IS ANONYMIZED/TELEMETRIZED, I CANNOT GUARANTEE COMPLIANCE WITH GDPR
 - Regular security audits
+- Clear, easy opt-outs
+- Innovative, modularized data collection for academic/scientific purposes; you share your data your way
 
-[🔧 Looking for technical details? Check out our [Technical Documentation](TECHNICAL.md)]
+🔧 Looking for technical details? Check out our [Technical Documentation](TECHNICAL.md)
 
 ## 📞 Need Help?
 

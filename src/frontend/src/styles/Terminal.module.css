@@ -1,0 +1,245 @@
+@keyframes scanline {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+.terminalContainer {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+  color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.terminalContainer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    transparent 50%,
+    rgba(103, 58, 183, 0.05) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  animation: scanline 10s linear infinite;
+  z-index: 2;
+}
+
+.terminalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid rgba(103, 58, 183, 0.5);
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  position: relative;
+  font-size: 1.2rem;
+  background: rgba(103, 58, 183, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.modeToggle {
+  background: transparent;
+  border: 1px solid #673ab7;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.modeToggle:hover:not(.disabled) {
+  background: #673ab7;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(103, 58, 183, 0.3);
+}
+
+.modeToggle.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #444;
+  color: #666;
+}
+
+.terminalOutput {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(103, 58, 183, 0.5);
+  border-radius: 8px;
+  position: relative;
+  font-size: 1rem;
+  line-height: 1.5;
+  background: rgba(26, 26, 46, 0.8);
+}
+
+.terminalOutput::-webkit-scrollbar {
+  width: 8px;
+}
+
+.terminalOutput::-webkit-scrollbar-track {
+  background: rgba(103, 58, 183, 0.1);
+  border-radius: 4px;
+}
+
+.terminalOutput::-webkit-scrollbar-thumb {
+  background-color: rgba(103, 58, 183, 0.5);
+  border-radius: 4px;
+}
+
+.terminalLine {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.terminalLine:hover {
+  background-color: rgba(103, 58, 183, 0.1);
+}
+
+.input {
+  color: #fff;
+}
+
+.output {
+  color: #b39ddb;
+}
+
+.error {
+  color: #ff5252;
+  background: rgba(255, 82, 82, 0.1);
+  border-left: 3px solid #ff5252;
+  padding-left: 1rem;
+}
+
+.system {
+  color: #64ffda;
+  font-style: italic;
+}
+
+.webResult {
+  background: rgba(103, 58, 183, 0.1);
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  border-left: 3px solid #673ab7;
+}
+
+.webResult h3 {
+  color: #b39ddb;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.webResult .url {
+  color: #7c4dff;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.webResult .snippet {
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.aiAnalysis {
+  background: rgba(103, 58, 183, 0.15);
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  border-left: 3px solid #7c4dff;
+}
+
+.aiAnalysis .modelName {
+  color: #b39ddb;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.aiAnalysis .confidence {
+  background: rgba(124, 77, 255, 0.2);
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  color: #b39ddb;
+}
+
+.inputForm {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid rgba(103, 58, 183, 0.5);
+  border-radius: 8px;
+  background: rgba(103, 58, 183, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.prompt {
+  color: #b39ddb;
+  margin-right: 1rem;
+  user-select: none;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.input {
+  flex-grow: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  outline: none;
+}
+
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.processing {
+  display: inline-block;
+  margin-left: 1rem;
+  animation: pulse 1.5s infinite;
+  color: #7c4dff;
+}
+
+.premiumBadge {
+  background: linear-gradient(45deg, #7c4dff, #673ab7);
+  color: #fff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  margin-left: 1rem;
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(103, 58, 183, 0.3);
+}
+
+.timestamp {
+  color: rgba(179, 157, 219, 0.7);
+  font-size: 0.8rem;
+  margin-right: 1rem;
+  font-family: inherit;
+}
