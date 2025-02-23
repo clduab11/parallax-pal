@@ -115,7 +115,7 @@ Choose the plan that fits your needs:
 ### ⚡ Privacy Plan - $999 one-time charge
 - All Pro features, plus...
 - Local model configuration w/ unlimited continuous research
-- 4 months free of Pro usage
+- 6 months free of Pro usage
 
 
 *All annual subscriptions get 2 months free!*
