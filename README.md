@@ -1,18 +1,29 @@
 # Parallax Pal
 
-A research and analytics platform with FastAPI backend and React/TypeScript frontend.
+A powerful research and analytics platform with FastAPI backend and React/TypeScript frontend, featuring advanced GPU acceleration support.
 
-## Features
+## Key Features
 
-- Secure JWT-based authentication with refresh tokens
-- Multi-factor authentication (MFA)
-- Email verification and password reset
-- Role-based access control
-- Subscription management with Stripe integration
-- PostgreSQL database with Redis caching
-- Real-time research task tracking
-- Comprehensive monitoring with Prometheus and Grafana
-- Docker-based deployment
+- **Advanced GPU Acceleration**
+  - NVIDIA GPU support with dynamic VRAM management
+  - Apple Silicon Metal support for optimized performance
+  - Automatic model selection based on available hardware
+  - Real-time GPU monitoring and status
+
+- **Intelligent Research**
+  - Multi-model analysis and synthesis
+  - Real-time research task tracking
+  - Advanced caching and optimization
+  - Customizable research workflows
+
+- **Enterprise Infrastructure**
+  - Secure JWT-based authentication with refresh tokens
+  - Multi-factor authentication (MFA)
+  - Email verification and password reset
+  - Role-based access control
+  - PostgreSQL database with Redis caching
+  - Comprehensive monitoring with Prometheus and Grafana
+  - Docker-based deployment
 
 ## Prerequisites
 
@@ -22,6 +33,7 @@ A research and analytics platform with FastAPI backend and React/TypeScript fron
 - PostgreSQL 15+ (for local development)
 - Redis 7+ (for local development)
 - Stripe account for payment processing
+- NVIDIA GPU or Apple Silicon device (optional, for hardware acceleration)
 
 ## Configuration
 
@@ -93,24 +105,63 @@ The application will be available at:
 
 ## Subscription Plans
 
-The platform offers three subscription tiers:
-1. Basic Plan
+The platform offers four subscription tiers:
+
+1. Free Tier (Ad-Supported)
    - Basic research capabilities
    - Limited API access
-   - Standard support
+   - Community support
+   - Ad-supported experience
+   - Data collection and analytics
+   Price: Free
 
-2. Pro Plan
+2. Basic Plan (+23%)
+   - All Free Tier features
+   - Ad-free experience
+   - Basic research capabilities
+   - Standard API access
+   - Email support
+   - Basic analytics
+   Price: $49/month
+
+3. Pro Plan (+23%)
+   - All Basic Plan features
    - Advanced research features
    - Full API access
    - Priority support
    - Custom analytics
+   - GPU acceleration
+   - Advanced data exports
+   Price: $99/month
 
-3. Enterprise Plan
+4. Enterprise Plan (+23%)
+   - All Pro Plan features
    - Unlimited research
    - Custom integrations
    - Dedicated support
    - Advanced analytics
    - Custom features
+   - Priority GPU access
+   - White-label options
+   Price: Starting at $499/month
+
+## Data Collection & Privacy
+
+For users on the Free (Ad-Supported) Tier:
+- Usage patterns and behavior analytics
+- Search and research topic analysis
+- Demographic information
+- Device and browser data
+- Interaction metrics
+
+This data is used to:
+- Improve service quality
+- Personalize advertising
+- Enhance user experience
+- Generate aggregated insights
+- Share with advertising partners
+
+Paid tiers have limited data collection focused only on service improvement.
 
 ## Payment Processing
 
@@ -120,6 +171,27 @@ Payment processing is handled through Stripe:
 3. Secure payment processing
 4. Automatic invoice generation
 5. Payment failure handling
+
+## Hardware Acceleration
+
+The platform supports multiple GPU architectures:
+
+1. NVIDIA GPUs
+   - Dynamic VRAM management
+   - Multi-model support
+   - Automatic model selection
+   - Real-time performance monitoring
+
+2. Apple Silicon (Metal)
+   - Native Metal API support
+   - Optimized for M1/M2/M3 chips
+   - Shared memory management
+   - Power-efficient inference
+
+3. CPU Fallback
+   - Automatic fallback for non-GPU systems
+   - Optimized CPU inference
+   - Resource-aware scheduling
 
 ## Monitoring and Metrics
 
@@ -132,6 +204,7 @@ The platform includes comprehensive monitoring:
    - Research tasks
    - System performance
    - API usage
+   - GPU utilization
    - Subscription status
 
 ## Security Features
