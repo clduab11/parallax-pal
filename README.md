@@ -133,7 +133,8 @@ Choose the plan that fits your needs:
 - EU USERS: WHILE DATA IS ANONYMIZED/TELEMETRIZED, I CANNOT GUARANTEE COMPLIANCE WITH GDPR
 - Regular security audits
 - Clear, easy opt-outs
-- Innovative, modularized data collection for academic/scientific purposes; you share your data your way
+- Innovative, modularized data collection for academic/scientific purposes
+- You share your data your way; monthly discounts available depending on amount/type data shared
 
 🔧 Looking for technical details? Check out our [Technical Documentation](TECHNICAL.md)
 
