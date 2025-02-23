@@ -58,7 +58,7 @@ Choose the plan below that works for you!
 - Real-time updates and progress tracking
 
 ### 🚄 Performance
-- GPU acceleration for local models
+- Optional/upgraded performance via GPU acceleration (supports NVIDIA, Apple Metal)
 - Parallel processing capabilities
 - Efficient resource management
 
@@ -74,7 +74,7 @@ Choose the plan below that works for you!
 - Priority query handling
 - Extended API access
 - Custom model configuration
-- Local model integration via Ollama
+- Optional/upgraded model integration via Ollama
 
 ### 📊 Enhanced Analytics
 - Detailed research metrics
