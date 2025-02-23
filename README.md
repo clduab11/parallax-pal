@@ -1,44 +1,45 @@
-# Parallax Pal
+# ✨ Parallax Pal - Your AI Research Companion
 
-![Parallax Pal](assets/logo.png)
+> 🚀 Supercharge your research with AI-powered analytics and insights
 
-> Your AI-Powered Research Companion with a Retro Terminal Interface
+## 🌟 What is Parallax Pal?
 
-Parallax Pal transforms the way you conduct research by combining cutting-edge AI models with a nostalgic terminal interface. Experience the power of modern AI through a beautifully crafted retro aesthetic.
+Parallax Pal is your intelligent research assistant that transforms complex data into actionable insights. Whether you're a business analyst, researcher, or decision-maker, our platform harnesses the power of AI to deliver comprehensive research results in minutes, not hours.
 
-## 🌟 What Makes Parallax Pal Special?
+## 💫 Why Choose Parallax Pal?
 
-- **Multi-Model Intelligence**: Access GPT-4, Claude, Gemini, and Ollama in one place
-- **Terminal-Style Interface**: Familiar command-line experience with modern functionality
-- **GPU-Accelerated**: Lightning-fast responses with local GPU acceleration
-- **Research-First Design**: Built for serious researchers and developers
+### 🧠 Smart Research
+- **Intelligent Analysis** - Multi-model AI processing for deeper insights
+- **Real-time Updates** - Watch your research unfold live
+- **Custom Workflows** - Tailor the research process to your needs
+- **Lightning Fast** - Get results in minutes with GPU acceleration
 
-## 🚀 Perfect For
+### 🛡️ Enterprise Ready
+- **Bank-Level Security** - Your data is protected with enterprise-grade encryption
+- **Easy Integration** - Seamless API access for your existing tools
+- **Smart Caching** - Lightning-fast response times
+- **24/7 Monitoring** - Real-time system health checks
 
-- **Developers** seeking efficient code analysis and documentation
-- **Researchers** needing comprehensive literature review
-- **Data Scientists** analyzing complex datasets
-- **Writers** looking for in-depth topic exploration
-- **Students** working on academic research
+### 🎯 Perfect For
+- 📊 Market Research
+- 📈 Competitive Analysis
+- 📚 Academic Research
+- 🔍 Data Mining
+- 📑 Document Analysis
+- 🌐 Web Intelligence
 
-## 💡 Use Cases
+## 💎 Plans That Fit Your Needs
 
-### Code Analysis
-```bash
-> analyze code structure ./src
-Analyzing project architecture...
-Identifying design patterns...
-Suggesting improvements...
-```
+### Pay-As-You-Go
+Perfect for occasional research needs:
+- 🎯 Single Query: $5.99
+- 🎯 5-Query Pack: $24.99 ($5/query)
+- 🎯 10-Query Pack: $39.99 ($4/query)
 
-### Research Synthesis
-```bash
-> research "quantum computing applications in cryptography"
-Searching multiple sources...
-Cross-referencing papers...
-Generating comprehensive analysis...
-```
+### Monthly Subscriptions
+Choose the plan that works for you:
 
+<<<<<<< HEAD
 ### Data Exploration
 ```bash
 > explore dataset "market_trends.csv"
@@ -94,73 +95,72 @@ Choose the plan that fits your needs:
 - Ad-supported
 - Community support
 - 
+=======
+#### 🆓 Free Tier
+- Basic research capabilities
+- Limited usage per month
+- Community support
+- Ad-supported
+- $0/month
+>>>>>>> e0ff6e8 (docs: Update README with marketing focus and new pricing)
 
-### 🚀 Pro Plan - $29/month
-- All basic features
-- Access to GPT-4 and Claude
-- Priority processing
-- 1000 queries per month
+#### ⭐ Basic
+- Ad-free experience
 - Email support
-- Export capabilities
+- Basic analytics
+- Increased usage per month
+- $49/month
 
+<<<<<<< HEAD
 ### ⚡ Premium Plan - $499/month
 - All Pro features
 - GPU acceleration
 - Unlimited queries
 - Local model configuration via Ollama
+=======
+#### 🌟 Pro
+- Advanced research features
+- GPU acceleration
+>>>>>>> e0ff6e8 (docs: Update README with marketing focus and new pricing)
 - Priority support
-- Team collaboration
-- API access
+- Unlimited usage
+- $99/month
 
+<<<<<<< HEAD
 *Annual subscriptions get 2 months free!*
+=======
+#### 💎 Enterprise
+- Custom solutions
+- Ollama/local-model support for uncapped inference
+- Dedicated support
+- White-label options
+- Starting at $499/month
 
-## 🎨 Beautiful Terminal Design
+## 🚀 Get Started in Seconds
+>>>>>>> e0ff6e8 (docs: Update README with marketing focus and new pricing)
 
-```
-██████╗  █████╗ ██████╗  █████╗ ██╗     ██╗      █████╗ ██╗  ██╗
-██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║     ██║     ██╔══██╗╚██╗██╔╝
-██████╔╝███████║██████╔╝███████║██║     ██║     ███████║ ╚███╔╝ 
-██╔═══╝ ██╔══██║██╔══██╗██╔══██║██║     ██║     ██╔══██║ ██╔██╗ 
-██║     ██║  ██║██║  ██║██║  ██║███████╗███████╗██║  ██║██╔╝ ██╗
-╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
-```
+1. 📝 Sign up at [parallaxanalytics.com](https://parallaxanalytics.com)
+2. 💳 Choose your plan
+3. ✨ Start researching!
 
-Experience the perfect blend of retro aesthetics and modern functionality.
+## 🔒 Your Data, Your Privacy
 
-## 🎉 Getting Started
+- Enterprise-grade security
+- Data encryption at rest and in transit
+- EU USERS: WHILE DATA IS ANONYMIZED/TELEMETRIZED, I CANNOT GUARANTEE COMPLIANCE WITH GDPR
+- Regular security audits
+- Clear, easy opt-outs
+- Innovative, modularized data collection for academic/scientific purposes; you share your data your way
 
-1. Visit [parallaxpal.com](https://parallaxpal.com)
-2. Sign up for an account
-3. Choose your subscription plan
-4. Start researching!
+🔧 Looking for technical details? Check out our [Technical Documentation](TECHNICAL.md)
 
-## 📚 Resources
+## 📞 Need Help?
 
-- [Documentation](https://docs.parallaxpal.com)
-- [API Reference](https://api.parallaxpal.com/docs)
-- [Use Cases](https://parallaxpal.com/use-cases)
-- [Blog](https://blog.parallaxpal.com)
+Our support team is ready to assist you:
+- 📧 support@parallaxanalytics.com
+- 💬 Live chat on our website
+- 📚 [Knowledge Base](https://docs.parallaxanalytics.com)
 
-## 💖 Community
+## 📄 License
 
-Join our growing community of researchers and developers:
-
-- [Discord Server](https://discord.gg/parallaxpal)
-- [GitHub Discussions](https://github.com/clduab11/parallax-pal/discussions)
-- [Twitter](https://twitter.com/parallaxpal)
-
-## 🤝 Support
-
-Need help? We're here for you:
-
-- [Support Portal](https://support.parallaxpal.com)
-- [Email Support](mailto:support@parallaxpal.com)
-- [FAQ](https://parallaxpal.com/faq)
-
-## 📜 License
-
-This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-*For technical documentation, including setup instructions and API details, see [TECHNICAL.md](TECHNICAL.md)*
+Parallax Pal is under the COPYRIGHT of Parallax Analytics, All Rights Reserved. Copyright 2025.
