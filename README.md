@@ -1,216 +1,135 @@
 # Parallax Pal
 
-A full-stack research and analytics platform with a terminal-inspired interface, powered by multiple AI models and GPU acceleration.
+![Parallax Pal](assets/logo.png)
 
-## Features
+> Your AI-Powered Research Companion with a Retro Terminal Interface
 
-- 🖥️ Terminal-inspired UI with modern UX
-- 🤖 Multi-model AI analysis (GPT-4, Claude, Gemini, Ollama)
-- ⚡ GPU acceleration for local models
-- 🔒 Secure OAuth2 authentication
-- 💳 Stripe subscription management
-- 📊 Real-time analytics and monitoring
-- 🔄 Background task processing
-- 📱 Responsive design for all devices
+Parallax Pal transforms the way you conduct research by combining cutting-edge AI models with a nostalgic terminal interface. Experience the power of modern AI through a beautifully crafted retro aesthetic.
 
-## Tech Stack
+## 🌟 What Makes Parallax Pal Special?
 
-### Frontend
-- React with TypeScript
-- Tailwind CSS for styling
-- Terminal-inspired components
-- Real-time WebSocket updates
-- Responsive design
+- **Multi-Model Intelligence**: Access GPT-4, Claude, Gemini, and Ollama in one place
+- **Terminal-Style Interface**: Familiar command-line experience with modern functionality
+- **GPU-Accelerated**: Lightning-fast responses with local GPU acceleration
+- **Research-First Design**: Built for serious researchers and developers
 
-### Backend
-- FastAPI (Python)
-- PostgreSQL database
-- Redis caching
-- Alembic migrations
-- OAuth2 authentication
-- Stripe integration
-- Email notifications
-- Background tasks
+## 🚀 Perfect For
 
-## Getting Started
+- **Developers** seeking efficient code analysis and documentation
+- **Researchers** needing comprehensive literature review
+- **Data Scientists** analyzing complex datasets
+- **Writers** looking for in-depth topic exploration
+- **Students** working on academic research
 
-### Prerequisites
+## 💡 Use Cases
 
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL 15+
-- Redis
-- (Optional) NVIDIA GPU for Ollama acceleration
-
-### Environment Setup
-
-1. Clone the repository:
+### Code Analysis
 ```bash
-git clone https://github.com/yourusername/parallax-pal.git
-cd parallax-pal
+> analyze code structure ./src
+Analyzing project architecture...
+Identifying design patterns...
+Suggesting improvements...
 ```
 
-2. Create and activate Python virtual environment:
+### Research Synthesis
 ```bash
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-.\venv\Scripts\activate   # Windows
+> research "quantum computing applications in cryptography"
+Searching multiple sources...
+Cross-referencing papers...
+Generating comprehensive analysis...
 ```
 
-3. Install Python dependencies:
+### Data Exploration
 ```bash
-cd src/api
-pip install -r requirements.txt
+> explore dataset "market_trends.csv"
+Processing data points...
+Identifying patterns...
+Generating visualizations...
 ```
 
-4. Install frontend dependencies:
-```bash
-cd ../frontend
-npm install
+## 🎯 Key Features
+
+### 🤖 AI Model Integration
+- Multiple AI models working in harmony
+- Model-specific strengths for different tasks
+- Seamless switching between models
+
+### 🖥️ Terminal Experience
+- Familiar command-line interface
+- Custom commands and shortcuts
+- Real-time updates and progress tracking
+
+### 🚄 Performance
+- GPU acceleration for local models
+- Parallel processing capabilities
+- Efficient resource management
+
+### 🔒 Security
+- End-to-end encryption
+- Secure OAuth2 authentication
+- Data privacy controls
+
+## 🌈 Premium Features
+
+### 💫 Advanced Capabilities
+- GPU-accelerated processing
+- Priority query handling
+- Extended API access
+- Custom model configuration
+
+### 📊 Enhanced Analytics
+- Detailed research metrics
+- Advanced visualization tools
+- Export capabilities
+- Custom reporting
+
+## 🎨 Beautiful Terminal Design
+
+```
+██████╗  █████╗ ██████╗  █████╗ ██╗     ██╗      █████╗ ██╗  ██╗
+██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║     ██║     ██╔══██╗╚██╗██╔╝
+██████╔╝███████║██████╔╝███████║██║     ██║     ███████║ ╚███╔╝ 
+██╔═══╝ ██╔══██║██╔══██╗██╔══██║██║     ██║     ██╔══██║ ██╔██╗ 
+██║     ██║  ██║██║  ██║██║  ██║███████╗███████╗██║  ██║██╔╝ ██╗
+╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
 ```
 
-5. Copy example environment files:
-```bash
-cp .env.example .env
-```
+Experience the perfect blend of retro aesthetics and modern functionality.
 
-6. Update environment variables in `.env` with your settings:
-```env
-# Application
-DEBUG=true
-SECRET_KEY=your-secret-key
-ENVIRONMENT=development
+## 🎉 Getting Started
 
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/parallaxpal
+1. Visit [parallaxpal.com](https://parallaxpal.com)
+2. Sign up for an account
+3. Choose your subscription plan
+4. Start researching!
 
-# Redis
-REDIS_URL=redis://localhost:6379/0
+## 📚 Resources
 
-# OAuth Providers
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-# ... other OAuth provider settings
+- [Documentation](https://docs.parallaxpal.com)
+- [API Reference](https://api.parallaxpal.com/docs)
+- [Use Cases](https://parallaxpal.com/use-cases)
+- [Blog](https://blog.parallaxpal.com)
 
-# Stripe
-STRIPE_SECRET_KEY=your-stripe-secret-key
-STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
-STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
+## 💖 Community
 
-# Email
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASSWORD=your-app-specific-password
-```
+Join our growing community of researchers and developers:
 
-### Database Setup
+- [Discord Server](https://discord.gg/parallaxpal)
+- [GitHub Discussions](https://github.com/clduab11/parallax-pal/discussions)
+- [Twitter](https://twitter.com/parallaxpal)
 
-1. Create PostgreSQL database:
-```bash
-createdb parallaxpal
-```
+## 🤝 Support
 
-2. Run database migrations:
-```bash
-cd src/api
-alembic upgrade head
-```
+Need help? We're here for you:
 
-### Running the Application
+- [Support Portal](https://support.parallaxpal.com)
+- [Email Support](mailto:support@parallaxpal.com)
+- [FAQ](https://parallaxpal.com/faq)
 
-1. Start the backend server:
-```bash
-cd src/api
-uvicorn main:app --reload --port 8000
-```
+## 📜 License
 
-2. Start the frontend development server:
-```bash
-cd src/frontend
-npm start
-```
+This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 
-3. Access the application:
-- Frontend: http://localhost:3000
-- API Documentation: http://localhost:8000/docs
-- API Redoc: http://localhost:8000/redoc
+---
 
-## Development
-
-### Code Style
-
-- Backend: Black + isort + flake8
-- Frontend: ESLint + Prettier
-
-### Running Tests
-
-Backend tests:
-```bash
-cd src/api
-pytest
-```
-
-Frontend tests:
-```bash
-cd src/frontend
-npm test
-```
-
-### Creating Database Migrations
-
-```bash
-cd src/api
-alembic revision --autogenerate -m "description of changes"
-alembic upgrade head
-```
-
-### API Documentation
-
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-- OpenAPI Schema: http://localhost:8000/openapi.json
-
-## Deployment
-
-### Production Setup
-
-1. Build frontend:
-```bash
-cd src/frontend
-npm run build
-```
-
-2. Configure production environment variables
-3. Run database migrations
-4. Start application with production server (e.g., Gunicorn)
-
-### Docker Deployment
-
-1. Build images:
-```bash
-docker-compose build
-```
-
-2. Start services:
-```bash
-docker-compose up -d
-```
-
-## Monitoring
-
-- Application metrics: http://localhost:8000/metrics
-- Health check: http://localhost:8000/health
-- Logs: Check `logs/` directory
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+*For technical documentation, including setup instructions and API details, see [TECHNICAL.md](TECHNICAL.md)*
