@@ -114,7 +114,7 @@ Choose the plan that fits your needs:
 
 ### ⚡ Privacy Plan - $999 one-time charge
 - All Pro features, plus...
-- Local model configuration w/ unlimited continuous research
+- Local model configuration w/ unlimited continuous research (NOTE: Unlimited continuous usage not available via API at this time; we are looking at adopting this in the future.)
 - 6 months free of Pro usage
 
 
@@ -142,7 +142,7 @@ Choose the plan that fits your needs:
 
 Our support team is ready to assist you:
 - 📧 support@parallaxanalytics.com
-- 💬 Live chat on our website
+- 💬 Future LLM-supported/live chat support options on our website
 - 📚 [Knowledge Base](https://docs.parallaxanalytics.com)
 
 ## 📄 License
