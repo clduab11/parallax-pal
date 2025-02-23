@@ -36,17 +36,10 @@ Perfect for occasional research needs:
 - 🎯 5-Query Pack: $24.99 ($5/query)
 - 🎯 10-Query Pack: $39.99 ($4/query)
 
-### Monthly Subscriptions
-Choose the plan that works for you:
+or...
 
-<<<<<<< HEAD
-### Data Exploration
-```bash
-> explore dataset "market_trends.csv"
-Processing data points...
-Identifying patterns...
-Generating visualizations...
-```
+### Monthly Subscriptions
+Choose the plan below that works for you!
 
 ## 🎯 Key Features
 
@@ -94,7 +87,7 @@ Choose the plan that fits your needs:
 - Standard processing speed
 - Ad-supported
 - Community support
-- 
+  
 =======
 #### 🆓 Free Tier
 - Basic research capabilities
@@ -109,35 +102,26 @@ Choose the plan that fits your needs:
 - Email support
 - Basic analytics
 - Increased usage per month
+- Limited continuous research per month
 - $49/month
 
-<<<<<<< HEAD
-### ⚡ Premium Plan - $499/month
-- All Pro features
-- GPU acceleration
-- Unlimited queries
-- Local model configuration via Ollama
-=======
 #### 🌟 Pro
 - Advanced research features
-- GPU acceleration
->>>>>>> e0ff6e8 (docs: Update README with marketing focus and new pricing)
+- GPU acceleration via Ollama library
 - Priority support
 - Unlimited usage
+- Increased continuous research per month
 - $99/month
 
-<<<<<<< HEAD
-*Annual subscriptions get 2 months free!*
+### ⚡ Privacy Plan - $699 one-time charge
+- All Pro features, plus...
+- Local model configuration w/ unlimited continuous research
+- 3 months free of Pro usage
 =======
-#### 💎 Enterprise
-- Custom solutions
-- Ollama/local-model support for uncapped inference
-- Dedicated support
-- White-label options
-- Starting at $499/month
+
+*All annual subscriptions get 2 months free!*
 
 ## 🚀 Get Started in Seconds
->>>>>>> e0ff6e8 (docs: Update README with marketing focus and new pricing)
 
 1. 📝 Sign up at [parallaxanalytics.com](https://parallaxanalytics.com)
 2. 💳 Choose your plan
