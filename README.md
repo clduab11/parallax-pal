@@ -88,7 +88,7 @@ Choose the plan below that works for you!
 
 Choose the plan that fits your needs:
 
-=======
+
 #### 🆓 Free Tier
 - Basic research capabilities
 - Limited usage per month
@@ -116,7 +116,7 @@ Choose the plan that fits your needs:
 - All Pro features, plus...
 - Local model configuration w/ unlimited continuous research
 - 4 months free of Pro usage
-=======
+
 
 *All annual subscriptions get 2 months free!*
 
