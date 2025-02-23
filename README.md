@@ -1,239 +1,91 @@
-# Parallax Pal
+# ✨ Parallax Pal - Your AI Research Companion
 
-A powerful research and analytics platform with FastAPI backend and React/TypeScript frontend, featuring advanced GPU acceleration support.
+> 🚀 Supercharge your research with AI-powered analytics and insights
 
-## Key Features
+## 🌟 What is Parallax Pal?
 
-- **Advanced GPU Acceleration**
-  - NVIDIA GPU support with dynamic VRAM management
-  - Apple Silicon Metal support for optimized performance
-  - Automatic model selection based on available hardware
-  - Real-time GPU monitoring and status
+Parallax Pal is your intelligent research assistant that transforms complex data into actionable insights. Whether you're a business analyst, researcher, or decision-maker, our platform harnesses the power of AI to deliver comprehensive research results in minutes, not hours.
 
-- **Intelligent Research**
-  - Multi-model analysis and synthesis
-  - Real-time research task tracking
-  - Advanced caching and optimization
-  - Customizable research workflows
+## 💫 Why Choose Parallax Pal?
 
-- **Enterprise Infrastructure**
-  - Secure JWT-based authentication with refresh tokens
-  - Multi-factor authentication (MFA)
-  - Email verification and password reset
-  - Role-based access control
-  - PostgreSQL database with Redis caching
-  - Comprehensive monitoring with Prometheus and Grafana
-  - Docker-based deployment
+### 🧠 Smart Research
+- **Intelligent Analysis** - Multi-model AI processing for deeper insights
+- **Real-time Updates** - Watch your research unfold live
+- **Custom Workflows** - Tailor the research process to your needs
+- **Lightning Fast** - Get results in minutes with GPU acceleration
 
-## Prerequisites
+### 🛡️ Enterprise Ready
+- **Bank-Level Security** - Your data is protected with enterprise-grade encryption
+- **Easy Integration** - Seamless API access for your existing tools
+- **Smart Caching** - Lightning-fast response times
+- **24/7 Monitoring** - Real-time system health checks
 
-- Docker and Docker Compose
-- Node.js 18+ (for local development)
-- Python 3.10+ (for local development)
-- PostgreSQL 15+ (for local development)
-- Redis 7+ (for local development)
-- Stripe account for payment processing
-- NVIDIA GPU or Apple Silicon device (optional, for hardware acceleration)
+### 🎯 Perfect For
+- 📊 Market Research
+- 📈 Competitive Analysis
+- 📚 Academic Research
+- 🔍 Data Mining
+- 📑 Document Analysis
+- 🌐 Web Intelligence
 
-## Configuration
+## 💎 Plans That Fit Your Needs
 
-1. Create a `.env` file based on `.env.example`:
-   ```bash
-   cp .env.example .env
-   ```
+### Pay-As-You-Go
+Perfect for occasional research needs:
+- 🎯 Single Query: $5.99
+- 🎯 5-Query Pack: $24.99 ($5/query)
+- 🎯 10-Query Pack: $39.99 ($4/query)
 
-2. Configure the following environment variables:
-   - Database credentials
-   - Redis connection
-   - JWT secret key
-   - Stripe API keys
-   - Email service credentials
-   - Frontend URL
+### Monthly Subscriptions
+Choose the plan that works for you:
 
-## Development Setup
+#### 🆓 Free Tier
+- Basic research capabilities
+- Community support
+- Ad-supported
+- $0/month
+- Annonymized/telemetrized data will be collected
 
-1. Install backend dependencies:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # or `venv\Scripts\activate` on Windows
-   pip install -r requirements.txt
-   ```
+#### ⭐ Basic
+- Ad-free experience
+- Email support
+- Basic analytics
+- $49/month
 
-2. Install frontend dependencies:
-   ```bash
-   cd src/frontend
-   npm install
-   ```
+#### 🌟 Pro
+- Advanced research features
+- GPU acceleration
+- Priority support
+- $99/month
 
-3. Start the development servers:
-   ```bash
-   # Terminal 1 - Backend
-   uvicorn api.main:app --reload --port 8000
+#### 💎 Enterprise
+- Custom solutions
+- Dedicated support
+- White-label options
+- Starting at $499/month
 
-   # Terminal 2 - Frontend
-   cd src/frontend
-   npm start
-   ```
+## 🚀 Get Started in Seconds
 
-## Docker Deployment
+1. 📝 Sign up at [parallaxanalytics.com](https://parallaxanalytics.com)
+2. 💳 Choose your plan
+3. ✨ Start researching!
 
-1. Build and start the services:
-   ```bash
-   docker-compose up -d --build
-   ```
+## 🔒 Your Data, Your Privacy
 
-2. Initialize the database:
-   ```bash
-   docker-compose exec backend alembic upgrade head
-   ```
+- Enterprise-grade security
+- Data encryption at rest and in transit
+- GDPR compliant
+- Regular security audits
 
-3. Create an admin user:
-   ```bash
-   docker-compose exec backend python scripts/create_admin.py
-   ```
+[🔧 Looking for technical details? Check out our [Technical Documentation](TECHNICAL.md)]
 
-The application will be available at:
-- Frontend: http://localhost
-- Backend API: http://localhost:8000
-- Grafana: http://localhost:3000
-- Prometheus: http://localhost:9090
+## 📞 Need Help?
 
-## API Documentation
+Our support team is ready to assist you:
+- 📧 support@parallaxanalytics.com
+- 💬 Live chat on our website
+- 📚 [Knowledge Base](https://docs.parallaxanalytics.com)
 
-- Swagger UI: http://localhost:8000/api/docs
-- ReDoc: http://localhost:8000/api/redoc
+## 📄 License
 
-## Subscription Plans
-
-The platform offers four subscription tiers:
-
-1. Free Tier (Ad-Supported)
-   - Basic research capabilities
-   - Limited API access
-   - Community support
-   - Ad-supported experience
-   - Data collection and analytics
-   Price: Free
-
-2. Basic Plan (+23%)
-   - All Free Tier features
-   - Ad-free experience
-   - Basic research capabilities
-   - Standard API access
-   - Email support
-   - Basic analytics
-   Price: $49/month
-
-3. Pro Plan (+23%)
-   - All Basic Plan features
-   - Advanced research features
-   - Full API access
-   - Priority support
-   - Custom analytics
-   - GPU acceleration
-   - Advanced data exports
-   Price: $99/month
-
-4. Enterprise Plan (+23%)
-   - All Pro Plan features
-   - Unlimited research
-   - Custom integrations
-   - Dedicated support
-   - Advanced analytics
-   - Custom features
-   - Priority GPU access
-   - White-label options
-   Price: Starting at $499/month
-
-## Data Collection & Privacy
-
-For users on the Free (Ad-Supported) Tier:
-- Usage patterns and behavior analytics
-- Search and research topic analysis
-- Demographic information
-- Device and browser data
-- Interaction metrics
-
-This data is used to:
-- Improve service quality
-- Personalize advertising
-- Enhance user experience
-- Generate aggregated insights
-- Share with advertising partners
-
-Paid tiers have limited data collection focused only on service improvement.
-
-## Payment Processing
-
-Payment processing is handled through Stripe:
-1. Users can add and manage payment methods
-2. Subscription management with automatic billing
-3. Secure payment processing
-4. Automatic invoice generation
-5. Payment failure handling
-
-## Hardware Acceleration
-
-The platform supports multiple GPU architectures:
-
-1. NVIDIA GPUs
-   - Dynamic VRAM management
-   - Multi-model support
-   - Automatic model selection
-   - Real-time performance monitoring
-
-2. Apple Silicon (Metal)
-   - Native Metal API support
-   - Optimized for M1/M2/M3 chips
-   - Shared memory management
-   - Power-efficient inference
-
-3. CPU Fallback
-   - Automatic fallback for non-GPU systems
-   - Optimized CPU inference
-   - Resource-aware scheduling
-
-## Monitoring and Metrics
-
-The platform includes comprehensive monitoring:
-1. Application metrics via Prometheus
-2. Visualization through Grafana
-3. Real-time performance monitoring
-4. Custom dashboards for:
-   - User activity
-   - Research tasks
-   - System performance
-   - API usage
-   - GPU utilization
-   - Subscription status
-
-## Security Features
-
-1. Authentication:
-   - JWT with refresh tokens
-   - Multi-factor authentication
-   - Email verification
-   - Password reset functionality
-
-2. Authorization:
-   - Role-based access control
-   - Fine-grained permissions
-   - API key management
-
-3. Data Protection:
-   - Data encryption at rest
-   - Secure communication (HTTPS)
-   - Rate limiting
-   - Input validation
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+Parallax Pal is under the COPYRIGHT of Parallax Analytics, All Rights Reserved. Copyright 2025.
