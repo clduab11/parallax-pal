@@ -41,7 +41,7 @@ or...
 ### Monthly Subscriptions
 Choose the plan below that works for you!
 
-## 🎯 Key Features
+## Key Features
 
 ### 🤖 AI Model Integration
 - Multiple AI models working in harmony
