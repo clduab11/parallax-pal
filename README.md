@@ -77,7 +77,7 @@ Choose the plan that works for you:
 - GDPR compliant
 - Regular security audits
 
-[🔧 Looking for technical details? Check out our [Technical Documentation](TECHNICAL.md)]
+🔧 Looking for technical details? Check out our [Technical Documentation](TECHNICAL.md)
 
 ## 📞 Need Help?
 
