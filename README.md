@@ -83,6 +83,43 @@ Generating visualizations...
 - Export capabilities
 - Custom reporting
 
+## 💎 Pricing
+
+Choose the plan that fits your needs:
+
+### 🎯 Basic Plan - Free
+- Access to basic AI models
+- Standard processing speed
+- 100 queries per month
+- Community support
+
+### 🚀 Pro Plan - $29/month
+- All basic features
+- Access to GPT-4 and Claude
+- Priority processing
+- 1000 queries per month
+- Email support
+- Export capabilities
+
+### ⚡ Premium Plan - $99/month
+- All Pro features
+- GPU acceleration
+- Unlimited queries
+- Custom model configuration
+- Priority support
+- Team collaboration
+- API access
+
+### 🏢 Enterprise Plan - Custom Pricing
+- All Premium features
+- Custom model training
+- Dedicated support
+- SLA guarantees
+- On-premise deployment
+- Custom integrations
+
+*Annual subscriptions get 2 months free!*
+
 ## 🎨 Beautiful Terminal Design
 
 ```
