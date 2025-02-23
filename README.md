@@ -74,7 +74,7 @@ Choose the plan below that works for you!
 - Priority query handling
 - Extended API access
 - Custom model configuration
-- Optional/upgraded model integration via Ollama
+- Optional/upgraded local model integration via Ollama
 
 ### 📊 Enhanced Analytics
 - Detailed research metrics
