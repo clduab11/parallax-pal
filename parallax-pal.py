@@ -159,7 +159,7 @@ def main():
                             print()  # Move to next line
                             break
                         # Check for backspace
-                        elif char == b'\x08':
+                        elif char == b'':
                             if query:
                                 query = query[:-1]
                                 # Clear the last character from console

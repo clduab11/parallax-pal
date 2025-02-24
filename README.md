@@ -20,14 +20,13 @@ Parallax Pal is your intelligent research assistant that transforms complex data
 - **Smart Caching** - Lightning-fast response times
 - **24/7 Monitoring** - Real-time system health checks
 
-### 🎯 Perfect For
+### 🎯 Perfect For...
 📊 Market Research
 📈 Competitive Analysis
 📚 Academic Research
 🔍 Data Mining
 📑 Document Analysis
 🌐 Web Intelligence
-
 
 
 ## 💎 Plans That Fit Your Needs
@@ -42,7 +41,6 @@ or...
 
 ### Monthly Subscriptions
 Choose the plan below that works for you!
-
 
 
 ## Key Features
@@ -81,7 +79,6 @@ Choose the plan below that works for you!
 - Advanced visualization tools
 - Export capabilities
 - Custom reporting
-
 
 
 ## 💎 Pricing

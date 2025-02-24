@@ -112,28 +112,105 @@ class TerminalUI:
         self.terminal_lock = threading.Lock()
         self.display_buffer = Queue(maxsize=1000)  # Prevent memory issues
 
-    # [Previous TerminalUI methods remain unchanged]
-
 class StrategicAnalysisParser:
-    """Enhanced parser with improved validation, safety, and error handling"""
-    def __init__(self, llm=None):
-        self.llm = llm
+    """Enhanced parser with improved pattern matching and validation"""
+    def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.parser_lock = threading.Lock()
-        
-        # Compile regex patterns for better performance
         self.patterns = {
             'priority': re.compile(r'Priority:\s*(\d+)', re.IGNORECASE),
             'area': re.compile(r'^\d+\.\s*(.+?)(?=Priority:|$)', re.IGNORECASE | re.MULTILINE | re.DOTALL)
         }
-        
-        # Constants for validation
         self.MAX_FOCUS_AREAS = 5
         self.MIN_AREA_LENGTH = 10
         self.MAX_AREA_LENGTH = 500
         self.VALID_PRIORITIES = set(range(1, 6))
 
-    # [Previous StrategicAnalysisParser methods remain unchanged]
+    def parse_analysis(self, llm_response: str) -> Optional[AnalysisResult]:
+        """Parse LLM response into a structured analysis result with validation"""
+        try:
+            # Clean and normalize the response
+            cleaned_text = self._clean_text(llm_response)
+            
+            # Extract original question
+            original_question = ""
+            question_match = re.search(r'Original Question Analysis:\s*(.*?)(?=\n\n|$)', cleaned_text, re.IGNORECASE | re.DOTALL)
+            if question_match:
+                original_question = question_match.group(1).strip()
+            
+            # Extract research areas and priorities
+            areas = []
+            area_section = re.search(r'Research Gaps?:(.*?)(?=\n\n|$)', cleaned_text, re.IGNORECASE | re.DOTALL)
+            if area_section:
+                area_text = area_section.group(1)
+                area_matches = re.finditer(r'(\d+)\.\s*([^.\n]+?)(?:\s*Priority:\s*(\d+))?(?=\n\d+\.|$)', area_text, re.DOTALL)
+                
+                for match in area_matches:
+                    area = match.group(2).strip()
+                    try:
+                        priority = int(match.group(3)) if match.group(3) else 3
+                        priority = max(1, min(5, priority))  # Clamp between 1-5
+                    except (ValueError, TypeError):
+                        priority = 3  # Default priority
+                    
+                    if len(area) >= self.MIN_AREA_LENGTH and len(area) <= self.MAX_AREA_LENGTH:
+                        areas.append(ResearchFocus(
+                            area=area,
+                            priority=priority,
+                            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        ))
+            
+            # Ensure we don't exceed maximum focus areas
+            areas = areas[:self.MAX_FOCUS_AREAS]
+            
+            # If no valid areas found, return None
+            if not areas:
+                logger.warning("No valid research areas found in response")
+                return None
+            
+            # Create analysis result
+            result = AnalysisResult(
+                original_question=original_question,
+                focus_areas=areas,
+                raw_response=llm_response,
+                confidence_score=self._calculate_confidence(original_question, areas)
+            )
+            
+            return result
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing analysis: {str(e)}")
+            return None
+
+    def _clean_text(self, text: str) -> str:
+        """Clean and normalize text for parsing"""
+        text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
+        text = re.sub(r'[\n\r]+', '\n', text)  # Normalize line breaks
+        return text.strip()
+        
+    def _calculate_confidence(self, question: str, areas: List[ResearchFocus]) -> float:
+        """Calculate confidence score for the analysis"""
+        score = 0.0
+        
+        # Question quality (0.3)
+        if question and len(question.split()) >= 3:
+            score += 0.3
+            
+        # Areas quality (0.7)
+        if areas:
+            # Number of areas (0.2)
+            score += min(len(areas) / self.MAX_FOCUS_AREAS, 1.0) * 0.2
+            
+            # Priority distribution (0.2)
+            priorities = set(area.priority for area in areas)
+            score += len(priorities) / 5 * 0.2
+            
+            # Area content quality (0.3)
+            valid_areas = sum(1 for area in areas 
+                            if len(area.area.split()) >= 3 
+                            and area.priority in self.VALID_PRIORITIES)
+            score += (valid_areas / len(areas)) * 0.3
+            
+        return round(score, 2)
 
 class ResearchManager:
     """Manages research process with enhanced security and performance"""
@@ -167,7 +244,7 @@ class ResearchManager:
         
         # Initialize UI and parser
         self.ui = TerminalUI()
-        self.strategic_parser = StrategicAnalysisParser(llm=self.llm)
+        self.strategic_parser = StrategicAnalysisParser()
         
         # Setup signal handlers with error handling
         try:
@@ -177,7 +254,202 @@ class ResearchManager:
             logger.error(f"Failed to set up signal handlers: {e}")
             raise
 
-    # [Previous ResearchManager methods remain unchanged]
+    def _signal_handler(self, signum, frame):
+        """Handle system signals for graceful shutdown"""
+        logger.info(f"Received signal {signum}")
+        self.interrupted.set()
+        self.shutdown_event.set()
+        if self.research_thread and self.research_thread.is_alive():
+            logger.info("Stopping research thread...")
+            self.terminate_research()
+
+    def start_research(self, query: str, continuous_mode: bool = False) -> None:
+        """Start the research process with the given query"""
+        if not query or not isinstance(query, str):
+            raise ValueError("Invalid research query")
+
+        logger.info(f"Starting research for query: {query}")
+        self.original_query = query
+        self.is_running = True
+        self.research_started.set()
+
+        try:
+            # Initialize research state
+            self.focus_areas = []
+            self.searched_urls.clear()
+            self.thinking = True
+
+            # Create research thread
+            self.research_thread = threading.Thread(
+                target=self._conduct_research,
+                args=(query, continuous_mode),
+                daemon=True
+            )
+            self.research_thread.start()
+
+        except Exception as e:
+            logger.error(f"Error starting research: {e}")
+            self.is_running = False
+            self.research_started.clear()
+            raise
+
+    def _conduct_research(self, query: str, continuous_mode: bool) -> None:
+        """Internal method to conduct the research process"""
+        try:
+            logger.info(f"Starting research for query: {query}")
+            
+            # Format query for LLM analysis
+            llm_response = self.llm.analyze_query(query)
+            if not llm_response:
+                raise ValueError("Failed to get LLM analysis")
+            
+            logger.info(f"LLM Response received:\n{llm_response}")
+
+            # Parse the LLM response
+            analysis = self.strategic_parser.parse_analysis(llm_response)
+            if not analysis:
+                # Don't throw error immediately, try to format the response
+                formatted_response = f"""Original Question Analysis: {query}
+
+Research Gaps:
+1. Understanding and definition of the topic
+   Priority: 1
+2. Historical development and discoveries
+   Priority: 2
+3. Current applications and significance
+   Priority: 3
+"""
+                logger.info(f"Attempting with formatted response:\n{formatted_response}")
+                analysis = self.strategic_parser.parse_analysis(formatted_response)
+                if not analysis:
+                    raise ValueError("Failed to parse LLM response even after formatting")
+                    
+            if not analysis.focus_areas:
+                raise ValueError("No research areas identified")
+
+            logger.info(f"Successfully analyzed query with {len(analysis.focus_areas)} focus areas")
+
+            self.focus_areas = analysis.focus_areas
+            
+            for focus in self.focus_areas:
+                if self.interrupted.is_set():
+                    logger.info("Research interrupted by user")
+                    break
+                    
+                self.current_focus = focus
+                try:
+                    search_results = self.search_engine.search(
+                        focus.source_query or query,
+                        max_results=self.max_searches
+                    )
+                except Exception as search_error:
+                    logger.error(f"Search error: {str(search_error)}")
+                    continue
+                
+                if search_results:
+                    for result in search_results:
+                        if self.interrupted.is_set():
+                            logger.info("Research interrupted during result processing")
+                            break
+                        if result.url not in self.searched_urls:
+                            self.searched_urls.add(result.url)
+                            try:
+                                self._process_result(result)
+                            except Exception as process_error:
+                                logger.error(f"Error processing result from {result.url}: {str(process_error)}")
+                                continue
+
+                if not continuous_mode:
+                    break
+
+        except Exception as e:
+            logger.error(f"Critical error in research process: {str(e)}", exc_info=True)
+            raise
+        finally:
+            self.thinking = False
+            self.current_focus = None
+            logger.info("Research process completed")
+
+    def _process_result(self, result) -> None:
+        """Process a single search result"""
+        try:
+            # Extract relevant information
+            summary = self.llm.summarize(result.content)
+            
+            # Save to temporary file
+            with tempfile.NamedTemporaryFile(
+                mode='w',
+                suffix='.txt',
+                delete=False,
+                encoding='utf-8'
+            ) as tmp:
+                tmp.write(f"URL: {result.url}\n\n")
+                tmp.write(f"Summary: {summary}\n\n")
+                tmp.write(f"Raw Content:\n{result.content}")
+                self.session_files.append(tmp.name)
+                
+        except Exception as e:
+            logger.error(f"Error processing result from {result.url}: {e}")
+
+    def terminate_research(self) -> Optional[str]:
+        """Terminate the current research process and return a summary"""
+        logger.info("Terminating research process...")
+        self.interrupted.set()
+        self.shutdown_event.set()
+        
+        try:
+            if self.research_thread and self.research_thread.is_alive():
+                self.research_thread.join(timeout=5.0)
+                
+            # Generate final summary
+            summary = None
+            if self.session_files:
+                combined_content = ""
+                for file_path in self.session_files:
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            combined_content += f.read() + "\n\n"
+                    except Exception as e:
+                        logger.error(f"Error reading session file {file_path}: {e}")
+                
+                if combined_content:
+                    summary = self.llm.generate_summary(
+                        combined_content,
+                        self.original_query
+                    )
+            
+            return summary
+            
+        except Exception as e:
+            logger.error(f"Error during research termination: {e}")
+            return None
+        finally:
+            self._cleanup()
+            self.is_running = False
+            self.research_started.clear()
+            self.interrupted.clear()
+            self.shutdown_event.clear()
+
+    def _cleanup(self) -> None:
+        """Clean up temporary files and resources"""
+        with self.cleanup_lock:
+            for file_path in self.session_files:
+                try:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                except Exception as e:
+                    logger.error(f"Error removing temporary file {file_path}: {e}")
+            self.session_files.clear()
+
+    @staticmethod
+    def get_initial_input() -> str:
+        """Get the initial research query from the user"""
+        try:
+            print(f"\n{Fore.CYAN}📝 Enter your research query (Press Enter to submit):{Style.RESET_ALL}")
+            query = input().strip()
+            return query
+        except (EOFError, KeyboardInterrupt):
+            return ""
 
 def main():
     """Main entry point with enhanced error handling and resource management"""
@@ -221,6 +493,10 @@ def main():
                     
                 print(f"\n{Fore.GREEN}Research completed. Ready for next topic.{Style.RESET_ALL}\n")
                 
+# Only ask for new session after successful completion
+                response = input(f"{Fore.CYAN}Would you like to start a new research session? (Y/n): {Style.RESET_ALL}").lower()
+                if response != 'y' and response != '':
+                    break
             except KeyboardInterrupt:
                 print(f"\n{Fore.YELLOW}Operation cancelled. Ready for next topic.{Style.RESET_ALL}")
                 if 'manager' in locals():
