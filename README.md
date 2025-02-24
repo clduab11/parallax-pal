@@ -21,12 +21,14 @@ Parallax Pal is your intelligent research assistant that transforms complex data
 - **24/7 Monitoring** - Real-time system health checks
 
 ### 🎯 Perfect For
-- 📊 Market Research
-- 📈 Competitive Analysis
-- 📚 Academic Research
-- 🔍 Data Mining
-- 📑 Document Analysis
-- 🌐 Web Intelligence
+📊 Market Research
+📈 Competitive Analysis
+📚 Academic Research
+🔍 Data Mining
+📑 Document Analysis
+🌐 Web Intelligence
+
+
 
 ## 💎 Plans That Fit Your Needs
 
@@ -36,19 +38,14 @@ Perfect for occasional research needs:
 - 🎯 5-Query Pack: $24.99 ($5/query)
 - 🎯 10-Query Pack: $39.99 ($4/query)
 
+or...
+
 ### Monthly Subscriptions
-Choose the plan that works for you:
+Choose the plan below that works for you!
 
-<<<<<<< HEAD
-### Data Exploration
-```bash
-> explore dataset "market_trends.csv"
-Processing data points...
-Identifying patterns...
-Generating visualizations...
-```
 
-## 🎯 Key Features
+
+## Key Features
 
 ### 🤖 AI Model Integration
 - Multiple AI models working in harmony
@@ -61,7 +58,7 @@ Generating visualizations...
 - Real-time updates and progress tracking
 
 ### 🚄 Performance
-- GPU acceleration for local models
+- Optional/upgraded performance via GPU acceleration (supports NVIDIA, Apple Metal)
 - Parallel processing capabilities
 - Efficient resource management
 
@@ -77,7 +74,7 @@ Generating visualizations...
 - Priority query handling
 - Extended API access
 - Custom model configuration
-- Local model integration via Ollama
+- Optional/upgraded local model integration via Ollama
 
 ### 📊 Enhanced Analytics
 - Detailed research metrics
@@ -85,59 +82,45 @@ Generating visualizations...
 - Export capabilities
 - Custom reporting
 
+
+
 ## 💎 Pricing
 
 Choose the plan that fits your needs:
 
-### 🎯 Basic Plan - Free
-- Access to basic AI models
-- Standard processing speed
-- Ad-supported
-- Community support
-- 
-=======
+
 #### 🆓 Free Tier
 - Basic research capabilities
 - Limited usage per month
 - Community support
 - Ad-supported
 - $0/month
->>>>>>> e0ff6e8 (docs: Update README with marketing focus and new pricing)
 
 #### ⭐ Basic
 - Ad-free experience
 - Email support
 - Basic analytics
 - Increased usage per month
-- $49/month
+- Limited continuous research per month
+- $29.99/month
 
-<<<<<<< HEAD
-### ⚡ Premium Plan - $499/month
-- All Pro features
-- GPU acceleration
-- Unlimited queries
-- Local model configuration via Ollama
-=======
 #### 🌟 Pro
 - Advanced research features
-- GPU acceleration
->>>>>>> e0ff6e8 (docs: Update README with marketing focus and new pricing)
+- GPU acceleration via Ollama library
 - Priority support
 - Unlimited usage
-- $99/month
+- Increased continuous research per month
+- $79.99/month
 
-<<<<<<< HEAD
-*Annual subscriptions get 2 months free!*
-=======
-#### 💎 Enterprise
-- Custom solutions
-- Ollama/local-model support for uncapped inference
-- Dedicated support
-- White-label options
-- Starting at $499/month
+### ⚡ Privacy Plan - $999 one-time charge
+- All Pro features, plus...
+- Local model configuration w/ unlimited continuous research (NOTE: Unlimited continuous usage not available via API at this time; we are looking at adopting this in the future.)
+- 6 months free of Pro usage
+
+
+*All annual subscriptions get 2 months free!*
 
 ## 🚀 Get Started in Seconds
->>>>>>> e0ff6e8 (docs: Update README with marketing focus and new pricing)
 
 1. 📝 Sign up at [parallaxanalytics.com](https://parallaxanalytics.com)
 2. 💳 Choose your plan
@@ -150,7 +133,8 @@ Choose the plan that fits your needs:
 - EU USERS: WHILE DATA IS ANONYMIZED/TELEMETRIZED, I CANNOT GUARANTEE COMPLIANCE WITH GDPR
 - Regular security audits
 - Clear, easy opt-outs
-- Innovative, modularized data collection for academic/scientific purposes; you share your data your way
+- Innovative, modularized data collection for academic/scientific purposes
+- You share your data your way; monthly discounts available depending on amount/type data shared
 
 🔧 Looking for technical details? Check out our [Technical Documentation](TECHNICAL.md)
 
@@ -158,7 +142,7 @@ Choose the plan that fits your needs:
 
 Our support team is ready to assist you:
 - 📧 support@parallaxanalytics.com
-- 💬 Live chat on our website
+- 💬 Future LLM-supported/live chat support options on our website
 - 📚 [Knowledge Base](https://docs.parallaxanalytics.com)
 
 ## 📄 License
