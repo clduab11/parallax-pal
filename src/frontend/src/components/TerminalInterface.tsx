@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, FormEvent, ChangeEvent } from 'react';
+import FollowUpPrompt from './FollowUpPrompt';
 import io from 'socket.io-client';
 import type { SocketClient } from '../types/socket';
 import {
@@ -30,6 +31,7 @@ const TerminalInterface: React.FC<TerminalProps> = ({ subscription, onModeChange
   const [socket, setSocket] = useState<SocketClient | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [mode, setMode] = useState<'web' | 'ollama'>('web');
+  const [showFollowUp, setShowFollowUp] = useState<boolean>(false);
   const outputContainerRef = useRef<HTMLDivElement>(null);
 
   // Initialize with banner and welcome message
@@ -78,6 +80,7 @@ Type 'help' for available commands.`,
       
       if (data.type === 'result') {
         setIsProcessing(false);
+        setShowFollowUp(true);
       }
     });
 
@@ -140,6 +143,19 @@ Type 'help' for available commands.`,
       <div className="text-terminal-green whitespace-pre-wrap">{analysis.analysis}</div>
     </div>
   );
+
+  const handleFollowUpYes = () => {
+    setShowFollowUp(false);
+    addOutput('system', '\nWhat would you like to explore further?');
+  };
+
+  const handleFollowUpNo = () => {
+    setShowFollowUp(false);
+    addOutput('system', '\nThank you for using Parallax Pal. Type "help" if you need anything else.');
+  };
+
+  // Clear follow-up when starting new query
+  useEffect(() => setShowFollowUp(false), [isProcessing]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -291,6 +307,12 @@ Processing : ${isProcessing ? 'ACTIVE' : 'IDLE'}`);
             disabled={isProcessing}
           />
         </div>
+
+        <FollowUpPrompt
+          isVisible={showFollowUp}
+          onYes={handleFollowUpYes}
+          onNo={handleFollowUpNo}
+        />
       </form>
     </div>
   );

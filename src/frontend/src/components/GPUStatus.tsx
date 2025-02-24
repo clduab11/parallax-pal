@@ -26,10 +26,36 @@ interface GPUStatus {
   using_gpu: boolean;
 }
 
+interface SubscriptionFeatures {
+  gpu_acceleration: boolean;
+  ollama_access: boolean;
+  is_pro: boolean;
+}
+
 const GPUStatus: React.FC = () => {
   const [gpuStatus, setGpuStatus] = useState<GPUStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [features, setFeatures] = useState<SubscriptionFeatures | null>(null);
+  const [gpuEnabled, setGpuEnabled] = useState(false);
+
+  // Fetch subscription features
+  useEffect(() => {
+    const fetchFeatures = async () => {
+      try {
+        const response = await fetch('/api/subscription/features');
+        if (!response.ok) {
+          throw new Error('Failed to fetch subscription features');
+        }
+        const data = await response.json();
+        setFeatures(data);
+      } catch (err) {
+        console.error('Error fetching features:', err);
+      }
+    };
+
+    fetchFeatures();
+  }, []);
 
   useEffect(() => {
     const fetchGPUStatus = async () => {
@@ -40,6 +66,7 @@ const GPUStatus: React.FC = () => {
         }
         const data = await response.json();
         setGpuStatus(data);
+        setGpuEnabled(data.using_gpu);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -49,12 +76,48 @@ const GPUStatus: React.FC = () => {
     };
 
     fetchGPUStatus();
-    // Refresh every 30 seconds
     const interval = setInterval(fetchGPUStatus, 30000);
     return () => clearInterval(interval);
   }, []);
 
+  const handleGPUToggle = async () => {
+    if (!features?.gpu_acceleration) {
+      setError('GPU acceleration requires a Pro subscription');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/update-gpu', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ enabled: !gpuEnabled }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update GPU status');
+      }
+      
+      setGpuEnabled(!gpuEnabled);
+      
+      // Refresh GPU status
+      const statusResponse = await fetch('/api/gpu-status');
+      if (statusResponse.ok) {
+        const data = await statusResponse.json();
+        setGpuStatus(data);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update GPU status');
+    }
+  };
+
   const handleModelChange = async (modelName: string) => {
+    if (modelName.startsWith('ollama/') && !features?.ollama_access) {
+      setError('Local model access requires a Pro subscription');
+      return;
+    }
+
     try {
       const response = await fetch('/api/update-model', {
         method: 'POST',
@@ -128,15 +191,29 @@ const GPUStatus: React.FC = () => {
               <div>Free VRAM: {formatVRAM(gpuStatus.gpu_info.free_vram)}</div>
               <div>Used VRAM: {formatVRAM(gpuStatus.gpu_info.used_vram)}</div>
             </div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`h-2 w-2 rounded-full ${gpuStatus.using_gpu ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span>GPU Acceleration: {gpuStatus.using_gpu ? 'Enabled' : 'Disabled'}</span>
-              {gpuStatus.gpu_info.metal_support && (
-                <span className="ml-4 text-terminal-amber">
-                  Metal Support: Available
-                </span>
-              )}
+            <div className="flex items-center gap-4 mb-4">
+              <button
+                onClick={() => features?.gpu_acceleration && handleGPUToggle()}
+                className={`px-4 py-2 rounded transition-colors duration-200 ${
+                  features?.gpu_acceleration
+                    ? 'bg-terminal-green text-black hover:bg-terminal-green-dark'
+                    : 'bg-gray-600 cursor-not-allowed'
+                }`}
+                disabled={!features?.gpu_acceleration}
+              >
+                GPU Acceleration: {gpuEnabled ? 'Enabled' : 'Disabled'}
+                {!features?.gpu_acceleration && (
+                  <span className="ml-2 text-terminal-amber text-xs">
+                    Pro required
+                  </span>
+                )}
+              </button>
             </div>
+            {gpuStatus.gpu_info.metal_support && (
+              <span className="text-terminal-amber">
+                Metal Support: Available
+              </span>
+            )}
           </>
         ) : (
           <p className="text-red-500">
@@ -157,24 +234,30 @@ const GPUStatus: React.FC = () => {
         <div>
           <h4 className="text-terminal-amber mb-2">Available Models:</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {gpuStatus.suitable_models.map((model) => (
-              <div
-                key={model.model}
-                onClick={() => model.suitable && handleModelChange(model.model)}
-                className={`
-                  p-4 rounded border cursor-pointer transition-colors duration-200
-                  ${model.suitable 
-                    ? 'border-terminal-green hover:bg-terminal-green hover:bg-opacity-10' 
-                    : 'border-red-500 opacity-50 cursor-not-allowed'}
-                `}
-              >
-                <div className="font-bold mb-1">{model.model}</div>
-                <div className="text-sm opacity-70">{model.vram_required}GB VRAM</div>
-                <div className={`text-sm mt-1 ${model.suitable ? 'text-terminal-green' : 'text-red-500'}`}>
-                  {model.reason}
+            {gpuStatus.suitable_models.map((model) => {
+              const isOllama = model.model.startsWith('ollama/');
+              const isDisabled = isOllama && !features?.ollama_access;
+              const canUse = model.suitable && !isDisabled;
+              
+              return (
+                <div
+                  key={model.model}
+                  onClick={() => canUse && handleModelChange(model.model)}
+                  className={`
+                    p-4 rounded border cursor-pointer transition-colors duration-200
+                    ${canUse
+                      ? 'border-terminal-green hover:bg-terminal-green hover:bg-opacity-10' 
+                      : 'border-red-500 opacity-50 cursor-not-allowed'}
+                  `}
+                >
+                  <div className="font-bold mb-1">{model.model}</div>
+                  <div className="text-sm opacity-70">{model.vram_required}GB VRAM</div>
+                  <div className={`text-sm mt-1 ${canUse ? 'text-terminal-green' : 'text-red-500'}`}>
+                    {isDisabled ? 'Pro subscription required' : model.reason}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

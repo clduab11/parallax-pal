@@ -13,6 +13,7 @@ from pydantic import BaseModel, EmailStr, constr, validator
 from . import models, auth
 from .database import get_db, init_db
 from .research import research_service
+from .routers import subscription
 from .cache import cache, cache_response
 from .monitoring import setup_monitoring, monitor_endpoint, StructuredLogger
 from .config import settings
@@ -64,6 +65,9 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc"
 )
+
+# Include routers
+app.include_router(subscription.router)
 
 # Set up monitoring and logging
 logger = setup_monitoring(app)
@@ -718,7 +722,19 @@ async def send_reset_email(email: str, token: str):
     summary="Get GPU status",
     description="Get current GPU status and model recommendations")
 @monitor_endpoint("get_gpu_status")
-async def get_gpu_status():
+async def get_gpu_status(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # Check subscription features
+    subscription = db.query(models.Subscription)\
+        .filter(models.Subscription.user_id == current_user.id)\
+        .filter(models.Subscription.status == models.SubscriptionStatus.ACTIVE)\
+        .first()
+
+    if not subscription or subscription.plan.price < 79.99:  # Pro plan check
+        return {"error": "GPU acceleration requires a Pro subscription"}
+
     from .llm_wrapper import llm
     return llm.get_gpu_status()
 
@@ -728,7 +744,20 @@ async def get_gpu_status():
     summary="Update Ollama model",
     description="Update the Ollama model being used")
 @monitor_endpoint("update_model")
-async def update_model(model_data: Dict[str, str]):
+async def update_model(
+    model_data: Dict[str, str],
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # Check subscription features
+    subscription = db.query(models.Subscription)\
+        .filter(models.Subscription.user_id == current_user.id)\
+        .filter(models.Subscription.status == models.SubscriptionStatus.ACTIVE)\
+        .first()
+
+    if not subscription or not subscription.plan.allows_ollama:
+        raise HTTPException(status_code=403, detail="Ollama access requires a Pro subscription")
+
     from .llm_wrapper import llm
     try:
         llm.update_ollama_model(model_data["model"])
