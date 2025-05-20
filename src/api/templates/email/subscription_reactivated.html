@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td>
+            <h2 style="color: #00FF00; font-size: 20px; margin-bottom: 20px; text-align: center;">
+                Subscription Reactivated
+            </h2>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #00FF00; margin-bottom: 20px;">
+                > SUBSCRIPTION UPDATE RECEIVED<br>
+                > PROCESSING REACTIVATION REQUEST<br>
+                > STATUS: CONFIRMED
+            </p>
+            <p style="color: #00FF00; margin-bottom: 20px;">
+                We've successfully reactivated your {{ plan_name }} subscription. Welcome back to the premium experience at {{ app_name }}!
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #00FF00; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #00FF00; font-size: 16px; margin-bottom: 15px;">
+                    SUBSCRIPTION STATUS:
+                </h3>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 15px;">
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Plan:</td>
+                        <td style="padding: 8px 0; color: #00FF00; text-align: right;">{{ plan_name }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Next Billing Date:</td>
+                        <td style="padding: 8px 0; color: #00FF00; text-align: right;">{{ next_billing_date }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #808080;">Status:</td>
+                        <td style="padding: 8px 0; color: #00FF00; text-align: right;">Active</td>
+                    </tr>
+                </table>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #404040; padding: 20px;">
+                <h3 style="color: #00FF00; font-size: 16px; margin-bottom: 15px;">
+                    WHAT THIS MEANS:
+                </h3>
+                <ul style="color: #808080; margin: 0; padding-left: 20px;">
+                    <li style="margin-bottom: 10px;">Your premium access will continue without interruption</li>
+                    <li style="margin-bottom: 10px;">Your subscription will automatically renew on {{ next_billing_date }}</li>
+                    <li style="margin-bottom: 10px;">You'll continue to enjoy all premium features</li>
+                    <li>You can manage your subscription at any time from your account settings</li>
+                </ul>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <div style="background-color: #000000; border: 1px solid #00FF00; padding: 20px; text-align: center;">
+                <p style="color: #00FF00; margin-bottom: 15px;">
+                    Need to manage your subscription? Visit your account settings:
+                </p>
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                    <tr>
+                        <td align="center" style="background-color: #006600; padding: 2px; border-radius: 4px;">
+                            <a href="{{ account_url }}" 
+                               style="background-color: #000000; border: 1px solid #00FF00; color: #00FF00; display: inline-block; padding: 12px 24px; text-decoration: none; font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: bold; border-radius: 3px;">
+                                MANAGE ACCOUNT
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 20px 0;">
+            <p style="color: #00FF00; font-size: 14px; text-align: center;">
+                > SUBSCRIPTION STATUS: ACTIVE<br>
+                > PREMIUM ACCESS: CONFIRMED<br>
+                > THANK YOU FOR YOUR CONTINUED MEMBERSHIP
+            </p>
+        </td>
+    </tr>
+</table>
+{% endblock %}

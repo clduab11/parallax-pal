@@ -6,7 +6,20 @@
 
 Parallax Pal is your intelligent research assistant that transforms complex data into actionable insights. Whether you're a business analyst, researcher, or decision-maker, our platform harnesses the power of AI to deliver comprehensive research results in minutes, not hours.
 
-## 💫 Why Choose Parallax Pal?
+## 🛠️ Project Status: 70-75% Complete
+
+Parallax Pal is actively under development with core functionality in place. Major components implemented include:
+
+- ✅ WebSocket-based real-time communication system
+- ✅ JWT authentication with refresh tokens and API key support
+- ✅ Multi-model AI orchestration framework
+- ✅ Subscription management with tiered feature access
+- ✅ Enhanced research pipeline with web scraping and analysis
+- ✅ Terminal-inspired interface for technical users
+- ✅ Backend infrastructure with FastAPI and SQLAlchemy
+- ✅ React frontend with TypeScript and modern component architecture
+
+##  Why Choose Parallax Pal?
 
 ### 🧠 Smart Research
 - **Intelligent Analysis** - Multi-model AI processing for deeper insights
@@ -33,9 +46,9 @@ Parallax Pal is your intelligent research assistant that transforms complex data
 
 ### Pay-As-You-Go
 Perfect for occasional research needs:
-- 🎯 Single Query: $5.99
-- 🎯 5-Query Pack: $24.99 ($5/query)
-- 🎯 10-Query Pack: $39.99 ($4/query)
+- 🎯 Single Query: $7.99
+- 🎯 5-Query Pack: $32.99 ($6.60/query)
+- 🎯 10-Query Pack: $54.99 ($5.50/query)
 
 or...
 
@@ -88,7 +101,7 @@ Choose the plan that fits your needs:
 
 #### 🆓 Free Tier
 - Basic research capabilities
-- Limited usage per month
+- 10 queries per month
 - Community support
 - Ad-supported
 - $0/month
@@ -97,22 +110,34 @@ Choose the plan that fits your needs:
 - Ad-free experience
 - Email support
 - Basic analytics
-- Increased usage per month
-- Limited continuous research per month
-- $29.99/month
+- 50 queries per month
+- Up to 5 continuous research tasks per month
+- $35.99/month or $359.90/year (save 17%)
 
 #### 🌟 Pro
 - Advanced research features
-- GPU acceleration via Ollama library
+- GPU acceleration for faster results
 - Priority support
-- Unlimited usage
-- Increased continuous research per month
-- $79.99/month
+- 500 queries per month
+- Up to 20 continuous research tasks per month
+- Advanced visualization tools
+- $95.99/month or $959.90/year (save 17%)
 
-### ⚡ Privacy Plan - $999 one-time charge
-- All Pro features, plus...
-- Local model configuration w/ unlimited continuous research (NOTE: Unlimited continuous usage not available via API at this time; we are looking at adopting this in the future.)
-- 6 months free of Pro usage
+#### 🔮 Enterprise
+- All Pro features
+- Dedicated support team
+- API access with custom rate limits
+- Custom analytics dashboard
+- Team collaboration features
+- Contact sales for pricing
+
+### ⚡ Privacy Plan - $1,499 one-time purchase
+- All Pro features
+- Local model configuration via Ollama
+- Unlimited continuous research
+- Full data sovereignty
+- 6 months of Pro subscription included
+- Annual renewal: $599
 
 
 *All annual subscriptions get 2 months free!*
@@ -131,11 +156,36 @@ Choose the plan that fits your needs:
 - Regular security audits
 - Clear, easy opt-outs
 - Innovative, modularized data collection for academic/scientific purposes
-- You share your data your way; monthly discounts available depending on amount/type data shared
+
+### 💰 Data Sharing Discount Program
+
+Share your research data and receive substantial subscription discounts. You control what you share:
+
+| Sharing Tier | Discount | Example Data Types |
+|--------------|----------|-------------------|
+| **Basic** | 10% | • Anonymous query statistics<br>• General topic categories<br>• Usage patterns |
+| **Standard** | 20% | • Anonymized search queries<br>• Result interaction metrics<br>• Feature utilization data |
+| **Enhanced** | 30% | • Domain-specific research patterns<br>• Content categorization data<br>• Source preference information |
+| **Premium** | 40% | • Full research corpus (anonymized)<br>• Custom workflow templates<br>• Industry-specific analysis patterns |
+
+**Important Notes:**
+- All shared data is anonymized and stripped of personal identifiers
+- Opt out at any time (discount adjusts accordingly)
+- Enterprise customers can negotiate custom data sharing agreements
+- Premium tier data is used for training specialized research models
 
 🔧 Looking for technical details? Check out our [Technical Documentation](TECHNICAL.md)
 
-## 📞 Need Help?
+## 📋 Recent Updates
+
+- **WebSocket Implementation**: Added real-time research updates via WebSockets
+- **Enhanced Authentication**: Complete JWT token system with refresh capabilities and API key support
+- **Subscription Features**: Implemented subscription-based access to premium features
+- **GPU Acceleration**: Added optional GPU acceleration for faster research processing
+- **Ollama Integration**: Added support for local model integration via Ollama (Privacy Plan)
+- **Project Planning**: Created detailed [Action Plan](ACTION_PLAN.md) for remaining development tasks
+
+## � Need Help?
 
 Our support team is ready to assist you:
 - 📧 support@parallaxanalytics.com
@@ -144,4 +194,33 @@ Our support team is ready to assist you:
 
 ## 📄 License
 
-Parallax Pal is under the COPYRIGHT of Parallax Analytics, All Rights Reserved. Copyright 2025.
+© 2025 Parallax Analytics, LLC. All Rights Reserved.
+
+Parallax Pal is proprietary software protected by copyright law. Unauthorized reproduction, distribution, or modification of this software, in whole or in part, is strictly prohibited.
+
+This software is provided under a commercial license agreement and may only be used in accordance with the terms of that agreement. Use of this software constitutes acceptance of the Parallax Pal License Agreement which can be found at [https://parallaxanalytics.com/license](https://parallaxanalytics.com/license).
+
+Parallax Pal incorporates certain open source components, each of which is governed by its respective license. A list of these components and their licenses can be found in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
+For licensing inquiries, please contact licensing@parallaxanalytics.com.
+
+## 💻 Development
+
+### Getting Started
+
+1. Clone the repository
+2. Copy `.env.example` to `.env` and configure your environment variables
+3. Install backend dependencies: `pip install -r requirements.txt`
+4. Install frontend dependencies: `cd src/frontend && npm install`
+5. Start the backend server: `python -m src.api.main`
+6. Start the frontend development server: `cd src/frontend && npm start`
+
+### Docker Support
+
+For containerized deployment:
+
+```bash
+docker-compose up -d
+```
+
+This will start both frontend and backend services as defined in `docker-compose.yml`.

@@ -2,7 +2,6 @@ import os
 import sys
 import re
 import logging
-import msvcrt
 from io import StringIO
 from typing import Dict, List, Tuple, Union, Optional
 from colorama import init, Fore, Style, Back
@@ -117,7 +116,15 @@ def main():
         logger.debug("Initializing components...")
         parser = UltimateLLMResponseParser()
         search_engine = EnhancedSelfImprovingSearch(llm, parser)
-        manager = ResearchManager(llm, parser, search_engine)
+        
+        # Initialize ResearchManager with caching enabled
+        cache_ttl = int(os.getenv("CACHE_TTL", "86400"))  # Default 24 hours (in seconds)
+        use_cache = os.getenv("USE_CACHE", "true").lower() == "true"
+        
+        logger.info(f"Cache settings: enabled={use_cache}, TTL={cache_ttl}s")
+        manager = ResearchManager(llm, parser, search_engine, 
+                                 use_cache=use_cache, 
+                                 cache_ttl=cache_ttl)
         
         # Get console width for panel sizing
         console_width = console.width or 80
@@ -133,6 +140,7 @@ def main():
         welcome_text.append("• 's' - Show current research status\n\n", style="yellow")
         welcome_text.append("📝 Query Format:\n", style="cyan")
         welcome_text.append("• Start with @ for continuous research mode\n")
+        welcome_text.append("• Start with ! to force refresh (ignore cache)\n")
         welcome_text.append("• Regular query for single iteration mode\n\n")
         welcome_text.append("🚀 System is ready! Enter your research query...", style="green")
 
@@ -148,45 +156,97 @@ def main():
         
         try:
             while True:
-                # Handle keyboard input character by character
-                query = ""
+                # Use a cross-platform approach for input
                 print(f"{Fore.GREEN}📝 Enter your research query (Press Enter to submit):{Style.RESET_ALL}")
-                while True:
-                    if msvcrt.kbhit():
-                        char = msvcrt.getch()
-                        # Check for Enter key (carriage return)
-                        if char in [b'\r', b'\n']:
-                            print()  # Move to next line
-                            break
-                        # Check for backspace
-                        elif char == b'':
-                            if query:
-                                query = query[:-1]
-                                # Clear the last character from console
-                                print('\b \b', end='', flush=True)
-                        # Check for special keys only when no query is being typed
-                        elif not query and char.decode(errors='ignore').lower() == 'g':
+                
+                if os.name == 'nt':
+                    # Windows-specific character-by-character input handling
+                    query = ""
+                    while True:
+                        if msvcrt.kbhit():
+                            char = msvcrt.getch()
+                            # Check for Enter key (carriage return)
+                            if char in [b'\r', b'\n']:
+                                print()  # Move to next line
+                                break
+                            # Check for backspace
+                            elif char == b'\x08':  # Correct backspace character
+                                if query:
+                                    query = query[:-1]
+                                    # Clear the last character from console
+                                    print('\b \b', end='', flush=True)
+                            # Check for special keys only when no query is being typed
+                            elif not query and char.decode(errors='ignore').lower() == 'g':
+                                print("\nToggling GPU acceleration...")
+                                try:
+                                    if hasattr(llm, 'toggle_gpu') and callable(llm.toggle_gpu):
+                                        if llm.toggle_gpu():
+                                            print(f"{Fore.GREEN}GPU settings updated successfully{Style.RESET_ALL}")
+                                    else:
+                                        print(f"{Fore.YELLOW}GPU toggling not supported with current configuration{Style.RESET_ALL}")
+                                except Exception as e:
+                                    logger.error(f"Error toggling GPU: {str(e)}")
+                                    print(f"{Fore.RED}Error toggling GPU: {str(e)}{Style.RESET_ALL}")
+                                print(f"{Fore.GREEN}📝 Enter your research query (Press Enter to submit):{Style.RESET_ALL}")
+                            # Regular character input
+                            elif char.isascii():
+                                try:
+                                    decoded_char = char.decode(errors='ignore')
+                                    query += decoded_char
+                                    print(decoded_char, end='', flush=True)
+                                except Exception as e:
+                                    logger.error(f"Error decoding character: {str(e)}")
+                else:
+                    # Unix-like systems use standard input
+                    try:
+                        # Use a more compatible approach for non-Windows systems
+                        query = input()
+                        # Special command handling after input
+                        if query.lower() == 'g':
                             print("\nToggling GPU acceleration...")
-                            if llm.toggle_gpu():
-                                print(f"{Fore.GREEN}GPU settings updated successfully{Style.RESET_ALL}")
+                            try:
+                                if hasattr(llm, 'toggle_gpu') and callable(llm.toggle_gpu):
+                                    if llm.toggle_gpu():
+                                        print(f"{Fore.GREEN}GPU settings updated successfully{Style.RESET_ALL}")
+                                else:
+                                    print(f"{Fore.YELLOW}GPU toggling not supported with current configuration{Style.RESET_ALL}")
+                            except Exception as e:
+                                logger.error(f"Error toggling GPU: {str(e)}")
+                                print(f"{Fore.RED}Error toggling GPU: {str(e)}{Style.RESET_ALL}")
                             print(f"{Fore.GREEN}📝 Enter your research query (Press Enter to submit):{Style.RESET_ALL}")
-                        # Regular character input
-                        elif char.isascii():
-                            query += char.decode()
-                            print(char.decode(), end='', flush=True)
+                            # Get new query after GPU toggle
+                            query = input()
+                    except KeyboardInterrupt:
+                        raise
+                    except Exception as e:
+                        logger.error(f"Error getting input: {str(e)}")
+                        query = ""
 
                 query = query.strip()
+                
+                # Check for special prefixes
+                force_refresh = query.startswith('!')
+                if force_refresh:
+                    query = query[1:]  # Remove ! prefix
+                    console.print("\n[yellow]Force refresh requested - ignoring cache[/yellow]")
                 
                 continuous_mode = query.startswith('@')
                 if continuous_mode:
                     query = query[1:]  # Remove @ prefix
+                    console.print("\n[cyan]Running in continuous mode (researching all focus areas)[/cyan]")
                 
                 # Start research and handle summary display
-                manager.start_research(query, continuous_mode)
+                start_time = time.time()
+                manager.start_research(query, continuous_mode, force_refresh)
                 
                 # Get and display the research summary
                 console.print("\n🔄 [cyan]Synthesizing research findings...[/cyan]")
-                summary = manager.terminate_research()
+                summary = manager.terminate_research(force_refresh)
+                
+                # Check if result came from cache
+                elapsed_time = time.time() - start_time
+                if summary and summary.get('cache_hit'):
+                    console.print(f"[green]Results retrieved from cache in {elapsed_time:.2f} seconds[/green]")
                 
                 if summary:
                     # Create a styled panel for the summary

@@ -61,36 +61,133 @@ Type 'help' for available commands.`,
     ]);
   }, [subscription.tier]);
 
-  // WebSocket connection
+  // Enhanced WebSocket connection with error handling and reconnection
   useEffect(() => {
-    const newSocket = io(process.env.REACT_APP_WEBSOCKET_URL || 'ws://localhost:8000/ws');
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    const baseReconnectDelay = 2000; // Start with 2 seconds
+    let reconnectTimer: NodeJS.Timeout | null = null;
     
+    // Get any stored auth token
+    const token = localStorage.getItem('auth_token') || '';
+    
+    // Create socket with connection options
+    const socketUrl = process.env.REACT_APP_WEBSOCKET_URL || 'ws://localhost:8000/ws';
+    const connectionOptions = {
+      reconnectionAttempts: maxReconnectAttempts,
+      reconnectionDelay: baseReconnectDelay,
+      reconnectionDelayMax: 10000, // 10 seconds max delay
+      timeout: 10000, // 10 second connection timeout
+      query: token ? { token } : {} // Include auth token if available
+    };
+    
+    const newSocket = io(socketUrl, connectionOptions);
+    
+    // Connection established
     newSocket.on('connect', () => {
+      reconnectAttempts = 0; // Reset reconnect counter on successful connection
       addOutput('system', '[CONNECTION ESTABLISHED]');
+      
+      // Send initial ping to verify connection
+      newSocket.emit('ping', { timestamp: new Date().toISOString() });
+    });
+    
+    // Connection failed
+    newSocket.on('connect_error', (error) => {
+      console.error('WebSocket connection error:', error);
+      
+      if (reconnectAttempts === 0) {
+        // Only show error on first attempt to avoid spamming
+        addOutput('error', `[CONNECTION ERROR: ${error.message}]`);
+      }
+      
+      reconnectAttempts++;
+      
+      if (reconnectAttempts > maxReconnectAttempts) {
+        addOutput('error', '[WEBSOCKET CONNECTION FAILED] Please refresh the page to retry');
+      } else {
+        addOutput('system', `[RECONNECTING...] Attempt ${reconnectAttempts}/${maxReconnectAttempts}`);
+      }
+    });
+    
+    // Authentication status update
+    newSocket.on('auth_status', (data: { authenticated: boolean, username?: string }) => {
+      if (data.authenticated) {
+        addOutput('system', `[AUTHENTICATED as ${data.username}]`);
+      }
     });
 
+    // Research updates (main event)
     newSocket.on('research_update', (data: ResearchUpdateData) => {
       if (data.type === 'error') {
+        // Handle error updates
         addOutput('error', data.message);
+        
+        // Also end processing state if error occurs
+        setIsProcessing(false);
       } else if (data.webResults || data.aiAnalyses) {
+        // Handle results with web results or AI analyses
         addOutput('web-result', data.message, data.webResults, data.aiAnalyses);
       } else {
+        // Handle regular updates
         addOutput('output', data.message);
       }
       
+      // End processing state if this is a final result
       if (data.type === 'result') {
         setIsProcessing(false);
         setShowFollowUp(true);
       }
     });
-
-    newSocket.on('disconnect', () => {
-      addOutput('system', '[CONNECTION LOST]');
+    
+    // Error event
+    newSocket.on('error', (data: { message: string }) => {
+      addOutput('error', `[SERVER ERROR] ${data.message}`);
+    });
+    
+    // Keep-alive response
+    newSocket.on('pong', () => {
+      // Silent pong response - just keeps connection alive
     });
 
+    // Connection closed
+    newSocket.on('disconnect', (reason) => {
+      addOutput('system', `[CONNECTION LOST: ${reason}]`);
+      
+      // Attempt to reconnect if not intentionally closed
+      if (reason !== 'io client disconnect') {
+        // Set up automatic reconnection with exponential backoff
+        const reconnectDelay = Math.min(
+          baseReconnectDelay * Math.pow(1.5, reconnectAttempts),
+          10000 // Max 10 seconds
+        );
+        
+        if (reconnectAttempts < maxReconnectAttempts) {
+          addOutput('system', `[RECONNECTING IN ${reconnectDelay/1000}s...]`);
+          
+          reconnectTimer = setTimeout(() => {
+            newSocket.connect();
+          }, reconnectDelay);
+        }
+      }
+    });
+
+    // Store socket reference
     setSocket(newSocket as SocketClient);
 
+    // Setup periodic ping to keep connection alive
+    const pingInterval = setInterval(() => {
+      if (newSocket.connected) {
+        newSocket.emit('ping', { timestamp: new Date().toISOString() });
+      }
+    }, 30000); // Every 30 seconds
+
+    // Cleanup on component unmount
     return () => {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
+      clearInterval(pingInterval);
       newSocket.disconnect();
     };
   }, []);
@@ -215,14 +312,70 @@ Processing : ${isProcessing ? 'ACTIVE' : 'IDLE'}`);
     setIsProcessing(true);
 
     if (socket) {
-      const queryData: ResearchQueryData = {
-        query: input,
-        mode,
-        useOllama: mode === 'ollama' || (subscription.tier === 'premium' && mode === 'web')
-      };
-      socket.emit('research_query', queryData);
+      try {
+        // Check socket connection first
+        if (!socket.connected) {
+          addOutput('error', '[ERROR] WebSocket not connected. Attempting to reconnect...');
+          socket.connect();
+          
+          // Give it a moment to connect
+          setTimeout(() => {
+            if (socket.connected) {
+              // Now connected, try sending again
+              const queryData: ResearchQueryData = {
+                query: input,
+                mode,
+                useOllama: mode === 'ollama' || (subscription.tier === 'premium' && mode === 'web')
+              };
+              
+              try {
+                socket.emit('research_query', { 
+                  event: 'research_query',
+                  data: queryData
+                });
+              } catch (retryError) {
+                console.error('Error sending query after reconnect:', retryError);
+                addOutput('error', '[ERROR] Failed to send query. Please try again later.');
+                setIsProcessing(false);
+              }
+            } else {
+              // Still not connected
+              addOutput('error', '[ERROR] Could not establish connection. Please refresh the page.');
+              setIsProcessing(false);
+            }
+          }, 1000);
+          
+        } else {
+          // Socket is connected, proceed normally
+          const queryData: ResearchQueryData = {
+            query: input,
+            mode,
+            useOllama: mode === 'ollama' || (subscription.tier === 'premium' && mode === 'web')
+          };
+          
+          socket.emit('research_query', { 
+            event: 'research_query',
+            data: queryData
+          });
+          
+          // Start tracking timeout in case server doesn't respond
+          const timeoutTimer = setTimeout(() => {
+            if (isProcessing) {
+              addOutput('error', '[ERROR] Server did not respond in time. Your query may still be processing.');
+            }
+          }, 30000); // 30 second timeout
+          
+          // Clean up timeout when component unmounts or on next query
+          return () => clearTimeout(timeoutTimer);
+        }
+      } catch (error) {
+        console.error('Error sending research query:', error);
+        addOutput('error', `[ERROR] Failed to send query: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setIsProcessing(false);
+      }
     } else {
       addOutput('error', '[ERROR] Research interface offline');
+      setIsProcessing(false);
     }
 
     setInput('');

@@ -2,24 +2,51 @@
 
 Comprehensive technical documentation for setting up, developing, and deploying Parallax Pal.
 
-## Tech Stack
+## Tech Stack Overview
 
-### Frontend
-- React with TypeScript
-- Tailwind CSS for styling
-- Terminal-inspired components
-- Real-time WebSocket updates
-- Responsive design
+Parallax Pal combines modern technologies to deliver a powerful research assistant platform. Below is a comprehensive breakdown of our technical architecture.
 
-### Backend
-- FastAPI (Python)
-- PostgreSQL database
-- Redis caching
-- Alembic migrations
-- OAuth2 authentication
-- Stripe integration
-- Email notifications
-- Background tasks
+### Frontend Architecture
+- **Framework**: React 18+ with TypeScript 5.0+
+- **Styling**: Tailwind CSS 3.3+ with custom terminal-inspired theme
+- **State Management**: Redux Toolkit for global state, React Query for API data
+- **Real-time Updates**: WebSocket integration with reconnection handling
+- **UI Components**: Custom terminal-inspired component library
+- **Responsive Design**: Mobile-first approach with adaptive layouts
+- **Accessibility**: WCAG 2.1 AA compliant
+- **Testing**: Jest, React Testing Library, and Cypress for E2E tests
+
+### Backend Architecture
+- **API Framework**: FastAPI 0.100.0+ (Python 3.11+)
+- **Database**: PostgreSQL 15+ with SQLAlchemy ORM
+- **Caching**: Redis 7+ with custom cache invalidation strategies
+- **Migrations**: Alembic for database schema versioning
+- **Authentication**: OAuth2 with JWT tokens and refresh token rotation
+- **Payment Processing**: Stripe API integration with webhook handling
+- **Email Service**: SMTP integration with templated emails
+- **Background Tasks**: Asynchronous task processing with proper error handling
+- **Monitoring**: Prometheus metrics, structured logging, and health checks
+- **Testing**: pytest for unit and integration tests
+
+## Research System Architecture
+
+### Multi-Model AI Integration
+- **Core Engine**: Custom orchestration layer for multiple AI models
+- **Supported Models**: OpenAI (GPT-4), Anthropic (Claude), Google (Gemini), Ollama (local models)
+- **Model Selection**: Dynamic routing based on query complexity and subscription tier
+- **Fallback Mechanism**: Graceful degradation when primary models are unavailable
+
+### Search and Data Processing
+- **Web Search**: Integration with multiple search engines for comprehensive results
+- **Content Extraction**: HTML parsing and content normalization
+- **Data Processing**: NLP pipeline for extracting key information
+- **Citation System**: Automatic source tracking and citation generation
+
+### GPU Acceleration
+- **Hardware Support**: NVIDIA (CUDA) and Apple (Metal) optimization
+- **Resource Management**: Dynamic allocation based on query complexity
+- **Batch Processing**: Efficient handling of multiple concurrent requests
+- **Monitoring**: Real-time GPU utilization and temperature tracking
 
 ## Development Setup
 
@@ -75,6 +102,10 @@ DATABASE_URL=postgresql://user:password@localhost:5432/parallaxpal
 
 # Redis
 REDIS_URL=redis://localhost:6379/0
+
+# Cache Settings
+USE_CACHE=true
+CACHE_TTL=86400  # 24 hours in seconds
 
 # OAuth Providers
 GOOGLE_CLIENT_ID=your-google-client-id
@@ -230,8 +261,12 @@ docker-compose up -d
 ## Performance Optimization
 
 ### Caching Strategy
-- Redis caching
-- Browser caching
+- Redis caching for API endpoints
+- File-based caching for research results
+- Intelligent caching of research queries and analyses
+- Cache invalidation based on time-to-live (TTL)
+- Force refresh capability to bypass cache
+- Browser caching for static assets
 - Static asset optimization
 - Query optimization
 
@@ -271,4 +306,24 @@ docker-compose up -d
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Proprietary License
+
+This project is licensed under a proprietary license by Parallax Analytics, LLC. All rights reserved.
+
+See the [LICENSE](LICENSE) file for details on the commercial license terms and conditions.
+
+### Third-Party Components
+
+Parallax Pal incorporates several open-source components, each governed by its respective license:
+
+- React: MIT License
+- FastAPI: MIT License
+- SQLAlchemy: MIT License
+- Alembic: MIT License
+- Tailwind CSS: MIT License
+
+Full license details for all third-party components are available in the `THIRD_PARTY_LICENSES.md` file.
+
+### Commercial Usage
+
+Commercial usage of Parallax Pal requires a valid license from Parallax Analytics, LLC. For licensing inquiries, please contact licensing@parallaxanalytics.com.

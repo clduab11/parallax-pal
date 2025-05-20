@@ -1,19 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import TerminalInterface from './components/TerminalInterface';
 import GPUStatus from './components/GPUStatus';
+import LoginForm from './components/auth/LoginForm';
+import RegisterForm from './components/auth/RegisterForm';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ResearchMode, UserSubscription } from './types/terminal';
+import subscriptionService from './services/subscriptionService';
+import websocketService from './services/websocketService';
 
-const App: React.FC = () => {
-  // Mock subscription - in production, this would come from your auth context
-  const [subscription] = useState<UserSubscription>({
-    tier: 'premium',
-    features: ['continuous-research', 'ollama-access']
+// Main dashboard component that requires authentication
+const Dashboard: React.FC = () => {
+  const { state } = useAuth();
+  const [subscription, setSubscription] = useState<UserSubscription>({
+    tier: 'basic',
+    features: []
   });
+  const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    const loadSubscription = async () => {
+      try {
+        // Get subscription info from API
+        const subscriptionInfo = await subscriptionService.getSubscriptionStatus();
+        
+        // Map subscription data to frontend format
+        const mappedSubscription = subscriptionService.mapSubscriptionToUserFormat(subscriptionInfo);
+        setSubscription(mappedSubscription);
+      } catch (error) {
+        console.error('Failed to load subscription:', error);
+        // Fallback to free tier on error
+        setSubscription({
+          tier: 'free',
+          features: []
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Initialize WebSocket with authentication
+    const initializeWebSocket = async () => {
+      if (state.accessToken) {
+        try {
+          await websocketService.initialize(state.accessToken);
+        } catch (error) {
+          console.error('WebSocket initialization failed:', error);
+        }
+      }
+    };
+
+    if (state.isAuthenticated && state.accessToken) {
+      loadSubscription();
+      initializeWebSocket();
+    }
+
+    // Cleanup WebSocket on unmount
+    return () => {
+      websocketService.cleanup();
+    };
+  }, [state.isAuthenticated, state.accessToken]);
+
+  // Handle research mode change
   const handleModeChange = (mode: ResearchMode): void => {
     console.log(`Mode changed to: ${mode}`);
     // In production, you might want to persist this preference
   };
+
+  // Show loading indicator while fetching subscription
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-terminal-black p-4 flex items-center justify-center">
+        <div className="text-terminal-green animate-pulse">
+          > Loading your dashboard...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-terminal-black p-4 md:p-8">
@@ -26,8 +90,14 @@ const App: React.FC = () => {
               <div className="terminal-dot terminal-dot-green"></div>
               <h1 className="text-xl ml-4">Parallax Pal Terminal</h1>
             </div>
-            <div className="text-sm opacity-70">
-              System ready • {new Date().toLocaleString()}
+            <div className="text-sm opacity-70 flex justify-between">
+              <span>System ready • {new Date().toLocaleString()}</span>
+              <span>
+                Logged in as <span className="text-terminal-green">{state.user?.username}</span> • 
+                <span className="text-terminal-green ml-2">
+                  {subscription.tier.charAt(0).toUpperCase() + subscription.tier.slice(1)} Tier
+                </span>
+              </span>
             </div>
           </div>
         </header>
@@ -55,4 +125,24 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+// Main App with routing
+const AppWithAuth: React.FC = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<LoginForm />} />
+          <Route path="/register" element={<RegisterForm />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+};
+
+export default AppWithAuth;

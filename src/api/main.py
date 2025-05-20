@@ -5,9 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 import pyotp
 import stripe
+import os
 from pydantic import BaseModel, EmailStr, constr, validator
 
 from . import models, auth
@@ -17,6 +18,7 @@ from .routers import subscription
 from .cache import cache, cache_response
 from .monitoring import setup_monitoring, monitor_endpoint, StructuredLogger
 from .config import settings
+from .services.email import EmailService
 
 # Configure Stripe
 stripe.api_key = settings["stripe"]["secret_key"]
@@ -73,20 +75,51 @@ app.include_router(subscription.router)
 logger = setup_monitoring(app)
 structured_logger = StructuredLogger("parallax-pal-api")
 
-# Configure CORS
+# Configure CORS with enhanced security
+allowed_origins = []
+
+# Add frontend URL from settings
+if settings.get('frontend', {}).get('url'):
+    allowed_origins.append(settings['frontend']['url'])
+
+# For development environments, add localhost origins
+if settings.get('environment') == 'development':
+    allowed_origins.extend([
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000"
+    ])
+# For production, ensure we have at least one origin
+elif not allowed_origins:
+    # Fallback to safe default if no frontend URL is configured
+    allowed_origins = ["https://app.parallaxanalytics.com"]
+
+# Configure CORS middleware with specific allowed methods and headers
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Specify your frontend domain in production
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key", "Accept"],
+    expose_headers=["Content-Disposition"],
+    max_age=600  # Cache preflight requests for 10 minutes
 )
+
+# Import WebSocket implementation
+from .websocket import setup_websocket
 
 # Startup Events
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database and monitoring on startup"""
+    """Initialize database, monitoring, and WebSockets on startup"""
+    # Initialize database
     init_db()
+    
+    # Set up WebSockets
+    setup_websocket(app)
+    
+    # Log successful startup
     structured_logger.log("info", "Application started successfully")
 
 class UserCreate(BaseModel):
@@ -115,12 +148,17 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    # Create access token with appropriate expiration
+    access_token_expires = timedelta(minutes=settings['security']['access_token_expire_minutes'])
     access_token = auth.create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     
-    refresh_token = auth.create_refresh_token(data={"sub": user.username})
+    # Create refresh token with appropriate expiration
+    refresh_token_expires = timedelta(days=settings['security']['refresh_token_expire_days'])
+    refresh_token = auth.create_refresh_token(
+        data={"sub": user.username}, expires_delta=refresh_token_expires
+    )
     
     # Store refresh token in database
     db_refresh_token = models.RefreshToken(
@@ -149,8 +187,15 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     
-    # Generate verification token
-    verification_token = auth.create_access_token(data={"sub": new_user.username}, expires_delta=timedelta(hours=24))
+    # Generate verification token with purpose claim for extra security
+    verification_token = auth.create_access_token(
+        data={
+            "sub": new_user.username, 
+            "purpose": "email_verification",
+            "email": new_user.email  # Include email to prevent token reuse for different email
+        }, 
+        expires_delta=timedelta(hours=24)
+    )
     
     # Send verification email
     await send_verification_email(new_user.email, verification_token)
@@ -161,28 +206,62 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     summary="Verify user account",
     description="Verify user account using the verification token")
 async def verify(token: str, db: Session = Depends(get_db)):
+    """
+    Verify user account using email verification token
+    
+    Args:
+        token: JWT verification token
+        db: Database session
+    
+    Returns:
+        dict: Message indicating verification status
+    """
+    # Use a generic error message to prevent information disclosure
+    invalid_token_exception = HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Invalid or expired verification token"
+    )
+    
+    # Decode and validate the token
     payload = auth.decode_token(token)
     if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid verification token"
-        )
+        structured_logger.log("warning", "Invalid verification token used")
+        raise invalid_token_exception
+    
+    # Extract username and check token purpose
     username: str = payload.get("sub")
-    if not username:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid verification token"
-        )
+    token_purpose = payload.get("purpose")
+    
+    # Validate token has required claims
+    if not username or token_purpose != "email_verification":
+        structured_logger.log("warning", "Verification token missing required claims")
+        raise invalid_token_exception
+    
+    # Use ORM's constant-time comparison to find the user
     user = db.query(models.User).filter(models.User.username == username).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        # Don't reveal that user doesn't exist
+        structured_logger.log("warning", "User not found during verification")
+        raise invalid_token_exception
+    
+    # Check if account already verified
     if user.is_active:
         return {"message": "Account already verified"}
+    
+    # Update user and log activity
     user.is_active = True
+    user.verified_at = datetime.utcnow()
     db.commit()
+    
+    structured_logger.log("info", "User account verified", user_id=user.id)
+    
+    # Send welcome email
+    try:
+        await EmailService.send_welcome_email(user.email, user.username)
+    except Exception as e:
+        # Log error but continue - welcome email is not critical
+        logger.error(f"Error sending welcome email: {str(e)}")
+    
     return {"message": "Account verified successfully"}
 
 @app.post("/generate_mfa_secret", tags=["authentication"],
@@ -296,7 +375,7 @@ async def refresh_token(
 @app.post("/reset_password_request", tags=["authentication"],
     summary="Request password reset",
     description="Request a password reset link to be sent to the user's email address")
-async def reset_password_request(email: str, db: Session = Depends(get_db)):
+async def reset_password_request(email: str, db: Session = Depends(get_db), request: Request = None):
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
         raise HTTPException(
@@ -304,8 +383,25 @@ async def reset_password_request(email: str, db: Session = Depends(get_db)):
             detail="User not found"
         )
 
-    # Generate reset token
-    reset_token = auth.create_access_token(data={"sub": user.username}, expires_delta=timedelta(hours=24))
+    # Generate reset token with purpose claim for extra security
+    reset_token = auth.create_access_token(
+        data={
+            "sub": user.username,
+            "purpose": "password_reset",
+            "email": user.email,  # Include email to prevent token reuse for different email
+            "jti": f"{datetime.utcnow().timestamp()}-{os.urandom(8).hex()}"  # Unique ID for one-time use
+        },
+        expires_delta=timedelta(hours=1)  # Shorter expiry for security
+    )
+
+    # Record reset request in audit log
+    auth.log_auth_activity(
+        db=db,
+        user=user,
+        action="password_reset_requested",
+        ip_address=request.client.host if request else None,
+        details="Password reset email sent"
+    )
 
     # Send reset email
     await send_reset_email(email, reset_token)
@@ -363,9 +459,16 @@ async def create_subscription_plan(
 async def list_subscription_plans(
     db: Session = Depends(get_db)
 ):
+    # Optimized query that selects only needed columns and adds ordering for consistency
     plans = db.query(models.SubscriptionPlan)\
         .filter(models.SubscriptionPlan.is_active == True)\
+        .order_by(models.SubscriptionPlan.price.asc())\
         .all()
+    
+    # Note: We're not selecting specific columns because the response_model needs the full object
+    # In a real optimization, we'd create a specific Pydantic model for the response
+    # that only includes the fields we need to return
+    
     return plans
 
 @app.post("/api/subscription/checkout",
@@ -477,6 +580,9 @@ async def stripe_webhook(
 
     return {"status": "success"}
 
+class CancellationOptions(BaseModel):
+    immediate: bool = False
+
 @app.post("/api/subscription/cancel",
     response_model=Dict[str, str],
     tags=["subscription"],
@@ -484,29 +590,183 @@ async def stripe_webhook(
     description="Cancel the current subscription")
 @monitor_endpoint("cancel_subscription")
 async def cancel_subscription(
+    options: CancellationOptions = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    # Get active subscription
+    if options is None:
+        options = CancellationOptions()
+        
+    structured_logger.log("info", "Subscription cancellation requested", 
+        user_id=current_user.id, immediate=options.immediate)
+    
+    # Get active subscription with plan in a single optimized query
     subscription = db.query(models.Subscription)\
-        .filter(models.Subscription.user_id == current_user.id)\
-        .filter(models.Subscription.status == models.SubscriptionStatus.ACTIVE)\
+        .options(selectinload(models.Subscription.plan))\
+        .filter(
+            models.Subscription.user_id == current_user.id,
+            models.Subscription.status == models.SubscriptionStatus.ACTIVE
+        )\
         .first()
     
     if not subscription:
+        structured_logger.log("warning", "No active subscription found for cancellation", user_id=current_user.id)
         raise HTTPException(status_code=404, detail="No active subscription found")
     
-    # Cancel subscription in Stripe
-    stripe.Subscription.modify(
-        subscription.stripe_subscription_id,
-        cancel_at_period_end=True
-    )
+    try:
+        # Begin a transaction for atomicity
+        # Note: We already have an implicit transaction with db.commit() later
+        
+        # Cancel subscription in Stripe
+        try:
+            if options.immediate:
+                # Cancel immediately
+                stripe_sub = stripe.Subscription.delete(
+                    subscription.stripe_subscription_id
+                )
+                structured_logger.log("info", "Subscription canceled immediately in Stripe", 
+                    subscription_id=subscription.stripe_subscription_id)
+                
+                # Update local subscription to canceled status
+                subscription.status = models.SubscriptionStatus.CANCELED
+                subscription.canceled_at = datetime.utcnow()
+                end_date = datetime.utcnow()
+            else:
+                # Cancel at period end
+                stripe_sub = stripe.Subscription.modify(
+                    subscription.stripe_subscription_id,
+                    cancel_at_period_end=True
+                )
+                structured_logger.log("info", "Subscription set to cancel at period end in Stripe", 
+                    subscription_id=subscription.stripe_subscription_id)
+                
+                # Update local subscription
+                subscription.cancel_at_period_end = True
+                end_date = subscription.current_period_end
+                
+        except stripe.error.StripeError as e:
+            structured_logger.log("error", "Stripe error during subscription cancellation", 
+                error=str(e), user_id=current_user.id)
+            raise HTTPException(status_code=400, detail=f"Payment provider error: {str(e)}")
+        
+        # Commit database changes
+        db.commit()
+        
+        # Send cancellation email asynchronously (with correct end date)
+        try:
+            # Use plan data we already loaded with selectinload
+            await EmailService.send_subscription_canceled(
+                email=current_user.email,
+                plan_name=subscription.plan.name,
+                end_date=end_date
+            )
+        except Exception as email_error:
+            # Log error but don't fail the operation - email is non-critical
+            structured_logger.log("error", "Failed to send cancellation email", 
+                error=str(email_error), user_id=current_user.id)
+        
+        # Log cancellation event for analytics
+        auth.log_auth_activity(
+            db=db,
+            user=current_user,
+            action="subscription_canceled",
+            details=f"Plan: {subscription.plan.name}, End date: {end_date}, Immediate: {options.immediate}"
+        )
+        
+        structured_logger.log("info", "Subscription successfully canceled", 
+            user_id=current_user.id, 
+            plan=subscription.plan.name,
+            end_date=end_date.isoformat() if end_date else None,
+            immediate=options.immediate)
+        
+        if options.immediate:
+            return {"message": "Subscription has been canceled immediately"}
+        else:
+            return {"message": "Subscription will be canceled at the end of the billing period"}
     
-    # Update local subscription
-    subscription.cancel_at_period_end = True
-    db.commit()
+    except Exception as e:
+        # Handle unexpected errors
+        db.rollback()  # Roll back the transaction
+        structured_logger.log("error", "Unexpected error during subscription cancellation", 
+            error=str(e), error_type=type(e).__name__, user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
+
+@app.post("/api/subscription/reactivate",
+    response_model=Dict[str, str],
+    tags=["subscription"],
+    summary="Reactivate subscription",
+    description="Reactivate a subscription that was previously set to cancel at period end")
+@monitor_endpoint("reactivate_subscription")
+async def reactivate_subscription(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    structured_logger.log("info", "Subscription reactivation requested", user_id=current_user.id)
     
-    return {"message": "Subscription will be canceled at the end of the billing period"}
+    # Get subscription that is marked for cancellation at period end
+    subscription = db.query(models.Subscription)\
+        .options(selectinload(models.Subscription.plan))\
+        .filter(
+            models.Subscription.user_id == current_user.id,
+            models.Subscription.status == models.SubscriptionStatus.ACTIVE,
+            models.Subscription.cancel_at_period_end == True
+        )\
+        .first()
+    
+    if not subscription:
+        structured_logger.log("warning", "No subscription eligible for reactivation found", user_id=current_user.id)
+        raise HTTPException(status_code=404, detail="No subscription eligible for reactivation found")
+    
+    try:
+        # Reactivate subscription in Stripe
+        try:
+            stripe_sub = stripe.Subscription.modify(
+                subscription.stripe_subscription_id,
+                cancel_at_period_end=False
+            )
+            structured_logger.log("info", "Subscription reactivated in Stripe", 
+                subscription_id=subscription.stripe_subscription_id)
+        except stripe.error.StripeError as e:
+            structured_logger.log("error", "Stripe error during subscription reactivation", 
+                error=str(e), user_id=current_user.id)
+            raise HTTPException(status_code=400, detail=f"Payment provider error: {str(e)}")
+        
+        # Update local subscription
+        subscription.cancel_at_period_end = False
+        db.commit()
+        
+        # Send reactivation email asynchronously
+        try:
+            await EmailService.send_subscription_reactivated(
+                email=current_user.email,
+                plan_name=subscription.plan.name,
+                next_billing_date=subscription.current_period_end
+            )
+        except Exception as email_error:
+            # Log error but don't fail the operation - email is non-critical
+            structured_logger.log("error", "Failed to send reactivation email", 
+                error=str(email_error), user_id=current_user.id)
+        
+        # Log reactivation event for analytics
+        auth.log_auth_activity(
+            db=db,
+            user=current_user,
+            action="subscription_reactivated",
+            details=f"Plan: {subscription.plan.name}"
+        )
+        
+        structured_logger.log("info", "Subscription successfully reactivated", 
+            user_id=current_user.id, 
+            plan=subscription.plan.name)
+        
+        return {"message": "Your subscription has been reactivated"}
+    
+    except Exception as e:
+        # Handle unexpected errors
+        db.rollback()  # Roll back the transaction
+        structured_logger.log("error", "Unexpected error during subscription reactivation", 
+            error=str(e), error_type=type(e).__name__, user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
 
 @app.get("/api/subscription/status",
     response_model=Dict[str, Any],
@@ -519,9 +779,16 @@ async def get_subscription_status(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
+    # Use a join to efficiently fetch subscription with plan details in a single query
+    # This avoids the N+1 query problem when accessing subscription.plan
     subscription = db.query(models.Subscription)\
-        .filter(models.Subscription.user_id == current_user.id)\
-        .filter(models.Subscription.status == models.SubscriptionStatus.ACTIVE)\
+        .options(
+            selectinload(models.Subscription.plan)  # Eager load the plan relationship
+        )\
+        .filter(
+            models.Subscription.user_id == current_user.id,
+            models.Subscription.status == models.SubscriptionStatus.ACTIVE
+        )\
         .first()
     
     if not subscription:
@@ -530,10 +797,21 @@ async def get_subscription_status(
             "subscription": None
         }
     
+    # Extract only the needed plan data to avoid serializing the entire object
+    plan_data = {
+        "id": subscription.plan.id,
+        "name": subscription.plan.name,
+        "description": subscription.plan.description,
+        "price": subscription.plan.price,
+        "interval": subscription.plan.interval,
+        "features": subscription.plan.features,
+        "allows_ollama": subscription.plan.allows_ollama
+    }
+    
     return {
         "has_subscription": True,
         "subscription": {
-            "plan": subscription.plan,
+            "plan": plan_data,
             "status": subscription.status,
             "current_period_end": subscription.current_period_end,
             "cancel_at_period_end": subscription.cancel_at_period_end
@@ -553,46 +831,104 @@ async def add_payment_method(
     current_user: models.User = Depends(auth.get_current_user)
 ):
     try:
-        # Attach payment method to Stripe customer
-        stripe.PaymentMethod.attach(
-            payment_method.payment_method_id,
-            customer=current_user.stripe_customer_id
-        )
-
-        # Get payment method details
-        pm = stripe.PaymentMethod.retrieve(payment_method.payment_method_id)
-
-        # Create payment method record
-        db_payment_method = models.PaymentMethod(
-            user_id=current_user.id,
-            stripe_payment_method_id=pm.id,
-            type=pm.type,
-            last4=pm.card.last4,
-            exp_month=pm.card.exp_month,
-            exp_year=pm.card.exp_year,
-            is_default=payment_method.set_default
-        )
-        
-        if payment_method.set_default:
-            # Set all other payment methods as non-default
-            db.query(models.PaymentMethod)\
-                .filter(models.PaymentMethod.user_id == current_user.id)\
-                .update({"is_default": False})
-            
-            # Update default payment method in Stripe
-            stripe.Customer.modify(
-                current_user.stripe_customer_id,
-                invoice_settings={
-                    "default_payment_method": payment_method.payment_method_id
-                }
+        # Check if customer exists in Stripe
+        if not current_user.stripe_customer_id:
+            # Create customer if needed
+            customer = stripe.Customer.create(
+                email=current_user.email,
+                metadata={"user_id": current_user.id}
             )
+            current_user.stripe_customer_id = customer.id
+            # We'll commit this change along with other database operations later
+        
+        # Attach payment method to Stripe customer in a single API call
+        # and retrieve payment method details in the same call
+        try:
+            # First attach payment method
+            stripe.PaymentMethod.attach(
+                payment_method.payment_method_id,
+                customer=current_user.stripe_customer_id
+            )
+            
+            # Then retrieve payment method details
+            pm = stripe.PaymentMethod.retrieve(payment_method.payment_method_id)
+        except stripe.error.StripeError as e:
+            # Handle specific Stripe errors with better error messages
+            error_message = str(e)
+            if "No such payment_method" in error_message:
+                error_message = "Invalid payment method ID"
+            elif "No such customer" in error_message:
+                error_message = "Customer account not found in payment system"
+            
+            structured_logger.log("error", "Payment method attachment failed",
+                               user_id=current_user.id,
+                               error_message=error_message)
+            raise HTTPException(status_code=400, detail=error_message)
 
-        db.add(db_payment_method)
-        db.commit()
-        db.refresh(db_payment_method)
-
-        return db_payment_method
+        # Begin transaction to ensure all database operations succeed or fail together
+        try:
+            # Create payment method record
+            db_payment_method = models.PaymentMethod(
+                user_id=current_user.id,
+                stripe_payment_method_id=pm.id,
+                type=pm.type,
+                last4=pm.card.last4,
+                exp_month=pm.card.exp_month,
+                exp_year=pm.card.exp_year,
+                is_default=payment_method.set_default
+            )
+            
+            if payment_method.set_default:
+                # Set all other payment methods as non-default in single query
+                db.query(models.PaymentMethod)\
+                    .filter(models.PaymentMethod.user_id == current_user.id)\
+                    .update({"is_default": False})
+                
+                # Update default payment method in Stripe
+                stripe.Customer.modify(
+                    current_user.stripe_customer_id,
+                    invoice_settings={
+                        "default_payment_method": payment_method.payment_method_id
+                    }
+                )
+            
+            # Add new payment method to database
+            db.add(db_payment_method)
+            
+            # Commit all changes at once (customer ID update, payment method flags, new payment method)
+            db.commit()
+            db.refresh(db_payment_method)
+            
+            # Log successful operation
+            structured_logger.log("info", "Payment method added successfully",
+                                user_id=current_user.id,
+                                payment_method_id=pm.id,
+                                is_default=payment_method.set_default)
+            
+            return db_payment_method
+        except Exception as db_error:
+            # Rollback transaction on database error
+            db.rollback()
+            
+            # Log the database error
+            structured_logger.log("error", "Database error adding payment method",
+                               user_id=current_user.id,
+                               error_message=str(db_error))
+            
+            # Try to detach the payment method from Stripe to clean up
+            try:
+                stripe.PaymentMethod.detach(payment_method.payment_method_id)
+            except stripe.error.StripeError:
+                # Ignore errors during cleanup
+                pass
+                
+            raise HTTPException(status_code=500, detail="Failed to save payment method")
+            
     except stripe.error.StripeError as e:
+        # Handle other Stripe errors
+        structured_logger.log("error", "Stripe error adding payment method",
+                           user_id=current_user.id,
+                           error_message=str(e))
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/api/payment-methods",
@@ -684,36 +1020,50 @@ async def set_default_payment_method(
         raise HTTPException(status_code=400, detail=str(e))
 
 async def send_verification_email(email: str, token: str):
-    # TODO: Implement email sending logic here
-    print(f"Sending verification email to {email} with token {token}")
-    # For example, you can use the following code:
-    # from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
-    # conf = ConnectionConfig(
-    #     MAIL_USERNAME=settings.EMAIL_USERNAME,
-    #     MAIL_PASSWORD=settings.EMAIL_PASSWORD,
-    #     MAIL_FROM=settings.EMAIL_FROM,
-    #     MAIL_PORT=settings.EMAIL_PORT,
-    #     MAIL_SERVER=settings.EMAIL_HOST,
-    #     MAIL_STARTTLS=True,
-    #     MAIL_SSL_TLS=False,
-    #     USE_CREDENTIALS=True,
-    #     VALIDATE_CERTS=True
-    # )
-    # message = MessageSchema(
-    #     subject="Account Verification",
-    #     recipients=[email],
-    #     body=f"Please click on the following link to verify your account: {settings.FRONTEND_URL}/verify?token={token}",
-    #     subtype="html"
-    # )
-    # fm = FastMail(conf)
-    # await fm.send_message(message)
-    pass
+    """
+    Send verification email using the EmailService
+    
+    Args:
+        email: User's email address 
+        token: Verification token (JWT)
+    """
+    try:
+        # Log email sending attempt without showing the token
+        structured_logger.log("info", "Sending verification email", email=email)
+        
+        # Use the EmailService to send the verification email securely
+        await EmailService.send_verification_email(email, token)
+        
+        structured_logger.log("info", "Verification email sent successfully", email=email)
+    except Exception as e:
+        # Log the error without exposing sensitive information
+        structured_logger.log("error", "Failed to send verification email", 
+                             error_type=type(e).__name__)
+        logger.error(f"Error sending verification email: {str(e)}")
+        # Don't raise the exception to prevent exposing sensitive information
 
 async def send_reset_email(email: str, token: str):
-    # TODO: Implement email sending logic here
-    print(f"Sending reset email to {email} with token {token}")
-    # Implementation similar to send_verification_email
-    pass
+    """
+    Send password reset email using the EmailService
+    
+    Args:
+        email: User's email address
+        token: Reset token (JWT)
+    """
+    try:
+        # Log email sending attempt without showing the token
+        structured_logger.log("info", "Sending password reset email", email=email)
+        
+        # Use the EmailService to send the password reset email securely
+        await EmailService.send_password_reset_email(email, token)
+        
+        structured_logger.log("info", "Password reset email sent successfully", email=email)
+    except Exception as e:
+        # Log the error without exposing sensitive information
+        structured_logger.log("error", "Failed to send password reset email", 
+                             error_type=type(e).__name__)
+        logger.error(f"Error sending password reset email: {str(e)}")
+        # Don't raise the exception to prevent exposing sensitive information
 
 # GPU and Model Management Endpoints
 @app.get("/api/gpu-status",

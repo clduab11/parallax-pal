@@ -56,9 +56,37 @@ export interface TerminalProps {
   onModeChange: (mode: ResearchMode) => void;
 }
 
+export interface AuthStatus {
+  authenticated: boolean;
+  username?: string;
+}
+
+export interface PingPongData {
+  timestamp: string;
+}
+
+export interface ErrorData {
+  message: string;
+  code?: number;
+}
+
 export interface SocketEvents {
+  // Standard Socket.IO events
   connect: () => void;
-  disconnect: () => void;
+  disconnect: (reason: string) => void;
+  connect_error: (error: Error) => void;
+  
+  // Custom application events
   research_update: (data: ResearchUpdateData) => void;
   research_query: (data: ResearchQueryData) => void;
+  
+  // Authentication events
+  auth_status: (data: AuthStatus) => void;
+  
+  // Error events
+  error: (data: ErrorData) => void;
+  
+  // Keep-alive events
+  ping: (data: PingPongData) => void;
+  pong: (data: PingPongData) => void;
 }

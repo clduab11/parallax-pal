@@ -169,7 +169,7 @@ class EmailService:
             "plan_name": plan_name,
             "end_date": end_date.strftime("%B %d, %Y"),
             "app_name": settings.APP_NAME,
-            "resubscribe_url": f"{settings.FRONTEND_URL}/pricing",
+            "resubscribe_url": f"{settings.FRONTEND_URL}/account/subscription",
             "support_email": settings.SMTP_FROM_EMAIL,
             "year": datetime.now().year
         }
@@ -178,6 +178,30 @@ class EmailService:
             email=email,
             subject=f"Your {settings.APP_NAME} subscription has been canceled",
             template_name="subscription_canceled.html",
+            context=context,
+            body=""  # Body is provided by template
+        )
+        
+    @staticmethod
+    async def send_subscription_reactivated(
+        email: EmailStr,
+        plan_name: str,
+        next_billing_date: datetime
+    ) -> None:
+        """Send subscription reactivation confirmation"""
+        context = {
+            "plan_name": plan_name,
+            "next_billing_date": next_billing_date.strftime("%B %d, %Y"),
+            "app_name": settings.APP_NAME,
+            "account_url": f"{settings.FRONTEND_URL}/account",
+            "support_email": settings.SMTP_FROM_EMAIL,
+            "year": datetime.now().year
+        }
+        
+        await EmailService._send_email(
+            email=email,
+            subject=f"Your {settings.APP_NAME} subscription has been reactivated",
+            template_name="subscription_reactivated.html",
             context=context,
             body=""  # Body is provided by template
         )
