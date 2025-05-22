@@ -292,7 +292,7 @@ This project is developed for the Google Cloud Multi-Agent Hackathon and is avai
 
 ### Development Team
 - **Lead Developer**: Chris Dukes
-- **Email**: cld@parallaxpal.com
+- **Email**: cldukes11@outlook.com
 - **GitHub**: https://github.com/clduab11
 
 ### Hackathon Submission
