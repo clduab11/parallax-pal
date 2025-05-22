@@ -34,7 +34,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
       <div className="terminal-window p-4 flex items-center justify-center">
         <div className="text-terminal-green">
           <div className="animate-pulse">
-            > Authenticating...
+            {'>'} Authenticating...
           </div>
         </div>
       </div>

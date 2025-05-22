@@ -1,0 +1,216 @@
+.knowledge-graph-container {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(to bottom right, #212121, #323232);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.knowledge-graph {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+.knowledge-graph:active {
+  cursor: grabbing;
+}
+
+.node-info-panel {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  padding: 12px;
+  max-width: 280px;
+  color: white;
+  z-index: 10;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  transition: all 0.2s ease;
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+.node-info-panel.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.node-info-panel h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.node-info-panel p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  line-height: 1.4;
+  opacity: 0.9;
+}
+
+.node-info-panel .meta {
+  font-size: 12px;
+  opacity: 0.7;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.graph-controls {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 12px;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: opacity 0.3s ease;
+  opacity: 0.7;
+}
+
+.graph-controls:hover {
+  opacity: 1;
+}
+
+.graph-controls strong {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+  margin-bottom: 4px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 6px;
+  display: inline-block;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Zoom controls */
+.zoom-controls {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.zoom-button {
+  width: 30px;
+  height: 30px;
+  background: rgba(30, 30, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  transition: background 0.2s ease;
+}
+
+.zoom-button:hover {
+  background: rgba(60, 60, 60, 0.85);
+}
+
+/* Highlight states */
+.node.highlighted circle {
+  stroke: #FFD54F;
+  stroke-width: 3px;
+}
+
+.link.highlighted {
+  stroke-width: 3px;
+}
+
+/* Tooltip */
+.graph-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.graph-tooltip.visible {
+  opacity: 1;
+}
+
+/* Loading state */
+.graph-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 30, 30, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  color: white;
+}
+
+.graph-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #2196F3;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .node-info-panel {
+    max-width: calc(100% - 40px);
+    left: 10px;
+    right: 10px;
+    top: auto;
+    bottom: 60px;
+  }
+  
+  .graph-controls {
+    padding: 6px 8px;
+    max-width: 160px;
+  }
+}

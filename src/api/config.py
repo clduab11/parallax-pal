@@ -1,5 +1,10 @@
 from typing import Dict, Any
-from pydantic import BaseSettings, PostgresDsn, HttpUrl, EmailStr, validator
+try:
+    from pydantic_settings import BaseSettings
+    from pydantic import PostgresDsn, HttpUrl, EmailStr, validator
+except ImportError:
+    # Fallback for older pydantic versions
+    from pydantic import BaseSettings, PostgresDsn, HttpUrl, EmailStr, validator
 import os
 from functools import lru_cache
 

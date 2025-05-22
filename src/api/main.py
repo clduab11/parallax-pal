@@ -20,6 +20,9 @@ from .monitoring import setup_monitoring, monitor_endpoint, StructuredLogger
 from .config import settings
 from .services.email import EmailService
 
+# Add ADK router import
+from .routers import adk
+
 # Configure Stripe
 stripe.api_key = settings["stripe"]["secret_key"]
 stripe.api_version = "2023-10-16"  # Use latest stable version
@@ -62,6 +65,7 @@ app = FastAPI(
     * Real-time progress tracking
     * Analytics integration
     * Admin dashboard
+    * ADK-based agent system integration
     """,
     version="1.0.0",
     docs_url="/api/docs",
@@ -70,6 +74,8 @@ app = FastAPI(
 
 # Include routers
 app.include_router(subscription.router)
+# Add ADK router
+app.include_router(adk.router)
 
 # Set up monitoring and logging
 logger = setup_monitoring(app)
@@ -108,16 +114,32 @@ app.add_middleware(
 
 # Import WebSocket implementation
 from .websocket import setup_websocket
+# Import ADK WebSocket manager
+from .websocket_adk import adk_websocket_manager
+
+# ADK configuration
+ADK_ENABLED = os.getenv("ADK_ENABLED", "false").lower() == "true"
+ADK_BASE_URL = os.getenv("ADK_ORCHESTRATOR_URL", "http://localhost:8080")
 
 # Startup Events
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database, monitoring, and WebSockets on startup"""
+    """Initialize database, monitoring, WebSockets, and ADK on startup"""
     # Initialize database
     init_db()
     
     # Set up WebSockets
     setup_websocket(app)
+    
+    # Initialize ADK WebSocket manager if enabled
+    if ADK_ENABLED:
+        try:
+            await adk_websocket_manager.initialize(ADK_BASE_URL)
+            structured_logger.log("info", "ADK WebSocket manager initialized",
+                                 adk_base_url=ADK_BASE_URL)
+        except Exception as e:
+            structured_logger.log("error", "Failed to initialize ADK WebSocket manager", 
+                                 error=str(e))
     
     # Log successful startup
     structured_logger.log("info", "Application started successfully")
@@ -1128,6 +1150,14 @@ async def create_research_task(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
+    # For ADK enabled systems, redirect to ADK research
+    if ADK_ENABLED:
+        structured_logger.log("info", "Redirecting to ADK research", user_id=current_user.id)
+        # Create a simple forwarding to the ADK router
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/api/adk/research")
+    
+    # Standard research process
     task = models.ResearchTask(
         query=query,
         owner_id=current_user.id
@@ -1235,11 +1265,26 @@ async def root():
 async def health_check():
     redis_status = "healthy" if cache.client.ping() else "unhealthy"
     db_status = "healthy"
+    adk_status = "disabled"
+    
     try:
         db = next(get_db())
         db.execute("SELECT 1")
     except Exception:
         db_status = "unhealthy"
+    
+    # Check ADK status if enabled
+    if ADK_ENABLED:
+        try:
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{ADK_BASE_URL}/health", timeout=2) as response:
+                    if response.status == 200:
+                        adk_status = "healthy"
+                    else:
+                        adk_status = "unhealthy"
+        except Exception:
+            adk_status = "unhealthy"
     
     return {
         "status": "healthy",
@@ -1247,7 +1292,8 @@ async def health_check():
         "timestamp": datetime.now().isoformat(),
         "dependencies": {
             "database": db_status,
-            "cache": redis_status
+            "cache": redis_status,
+            "adk": adk_status
         }
     }
 

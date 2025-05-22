@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import TerminalInterface from './components/TerminalInterface';
+import ResearchInterface from './components/ResearchInterface';
 import GPUStatus from './components/GPUStatus';
 import LoginForm from './components/auth/LoginForm';
 import RegisterForm from './components/auth/RegisterForm';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ResearchMode, UserSubscription } from './types/terminal';
+import { UserSubscription } from './types/auth';
 import subscriptionService from './services/subscriptionService';
-import websocketService from './services/websocketService';
+import adkService from './services/adkService';
 
 // Main dashboard component that requires authentication
 const Dashboard: React.FC = () => {
@@ -18,7 +18,6 @@ const Dashboard: React.FC = () => {
     features: []
   });
   const [isLoading, setIsLoading] = useState(true);
-
   useEffect(() => {
     const loadSubscription = async () => {
       try {
@@ -40,11 +39,12 @@ const Dashboard: React.FC = () => {
       }
     };
 
-    // Initialize WebSocket with authentication
+    // Initialize ADK WebSocket with authentication
     const initializeWebSocket = async () => {
       if (state.accessToken) {
         try {
-          await websocketService.initialize(state.accessToken);
+          await adkService.initializeWebSocket(state.accessToken);
+          console.log('ADK WebSocket initialized');
         } catch (error) {
           console.error('WebSocket initialization failed:', error);
         }
@@ -58,22 +58,17 @@ const Dashboard: React.FC = () => {
 
     // Cleanup WebSocket on unmount
     return () => {
-      websocketService.cleanup();
+      adkService.cleanup();
     };
   }, [state.isAuthenticated, state.accessToken]);
 
-  // Handle research mode change
-  const handleModeChange = (mode: ResearchMode): void => {
-    console.log(`Mode changed to: ${mode}`);
-    // In production, you might want to persist this preference
-  };
 
   // Show loading indicator while fetching subscription
   if (isLoading) {
     return (
       <div className="min-h-screen bg-terminal-black p-4 flex items-center justify-center">
         <div className="text-terminal-green animate-pulse">
-          > Loading your dashboard...
+          {'>'} Loading your dashboard...
         </div>
       </div>
     );
@@ -88,7 +83,9 @@ const Dashboard: React.FC = () => {
               <div className="terminal-dot terminal-dot-red"></div>
               <div className="terminal-dot terminal-dot-yellow"></div>
               <div className="terminal-dot terminal-dot-green"></div>
-              <h1 className="text-xl ml-4">Parallax Pal Terminal</h1>
+              <h1 className="text-xl ml-4">
+                Starri - AI Research Assistant
+              </h1>
             </div>
             <div className="text-sm opacity-70 flex justify-between">
               <span>System ready • {new Date().toLocaleString()}</span>
@@ -109,16 +106,13 @@ const Dashboard: React.FC = () => {
             </div>
           )}
           
-          <div className="terminal-window h-[600px] overflow-hidden">
-            <TerminalInterface 
-              subscription={subscription}
-              onModeChange={handleModeChange}
-            />
+          <div className="h-[700px] bg-terminal-black rounded-lg overflow-hidden border border-terminal-green border-opacity-30">
+            <ResearchInterface />
           </div>
         </main>
 
         <footer className="mt-8 text-center text-terminal-green text-sm opacity-50">
-          <p>Parallax Pal v1.0.0 • Running on React + FastAPI</p>
+          <p>Starri v2.0.0 • Powered by Google Cloud ADK + Gemini 2.5 Pro</p>
         </footer>
       </div>
     </div>
