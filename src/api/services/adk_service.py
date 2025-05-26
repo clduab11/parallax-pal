@@ -24,6 +24,10 @@ from schemas.agent_messages import (
 )
 from adk_config import AGENT_CONFIG, DEV_MODE
 
+# Import monitoring
+from ..monitoring.cloud_monitoring import CloudMonitoringService
+from ..monitoring.monitoring_middleware import AgentMonitoringMixin
+
 # Set up logging
 logging.basicConfig(
     level=logging.INFO if DEV_MODE else logging.WARNING,
@@ -31,7 +35,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("adk_service")
 
-class ADKService:
+class ADKService(AgentMonitoringMixin):
     """
     Service layer for ADK integration with Parallax Pal backend.
     
@@ -41,8 +45,10 @@ class ADKService:
     
     def __init__(self):
         """Initialize the ADK service"""
+        super().__init__()  # Initialize monitoring mixin
         self.orchestrator = OrchestratorAgent()
         self.initialized = False
+        self.monitoring = CloudMonitoringService()
         logger.info("ADK Service created")
     
     async def initialize(self):
@@ -53,7 +59,27 @@ class ADKService:
             self.initialized = True
             logger.info("ADK Service initialized")
     
+    @property
+    def monitored_start_research(self):
+        return self.monitored_invoke(self._start_research)
+    
     async def start_research(
+        self, 
+        query: str, 
+        user_id: int,
+        continuous_mode: bool = False,
+        force_refresh: bool = False,
+        max_sources: Optional[int] = None,
+        depth_level: str = "detailed",
+        focus_areas: Optional[List[str]] = None
+    ) -> str:
+        """Start a research request with monitoring."""
+        return await self.monitored_start_research(
+            query, user_id, continuous_mode, force_refresh, 
+            max_sources, depth_level, focus_areas
+        )
+    
+    async def _start_research(
         self, 
         query: str, 
         user_id: int,
@@ -94,6 +120,27 @@ class ADKService:
         }
         
         logger.info(f"Starting research for user {user_id}: {query}")
+        
+        # Record research query metrics
+        self.monitoring.increment_counter(
+            "research_queries_total",
+            labels={
+                "agent": "orchestrator",
+                "status": "started",
+                "user_tier": "standard"  # This should come from user data
+            }
+        )
+        
+        # Record query complexity
+        complexity = "simple" if len(query.split()) < 10 else "complex"
+        self.monitoring.observe_histogram(
+            "research_query_duration",
+            0.0,  # Will be updated when complete
+            labels={
+                "agent": "orchestrator", 
+                "complexity": complexity
+            }
+        )
         
         # Start research through orchestrator
         result = await self.orchestrator.handle_research_request(

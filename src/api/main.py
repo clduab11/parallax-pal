@@ -22,6 +22,11 @@ from .services.email import EmailService
 
 # Add ADK router import
 from .routers import adk
+# Add health router import  
+from .routers import health
+# Add monitoring integration
+from .monitoring.cloud_monitoring import CloudMonitoringService
+from .monitoring.monitoring_middleware import setup_request_monitoring
 
 # Configure Stripe
 stripe.api_key = settings["stripe"]["secret_key"]
@@ -76,10 +81,17 @@ app = FastAPI(
 app.include_router(subscription.router)
 # Add ADK router
 app.include_router(adk.router)
+# Add health router
+app.include_router(health.router)
 
 # Set up monitoring and logging
 logger = setup_monitoring(app)
 structured_logger = StructuredLogger("parallax-pal-api")
+
+# Initialize Cloud Monitoring service
+monitoring_service = CloudMonitoringService()
+# Setup request monitoring middleware
+setup_request_monitoring(app, monitoring_service)
 
 # Configure CORS with enhanced security
 allowed_origins = []

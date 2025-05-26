@@ -1,0 +1,272 @@
+/* Onboarding Flow Styles */
+
+/* Smooth animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes sparkle {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Custom scrollbar for onboarding content */
+.onboarding-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.onboarding-content::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.5);
+  border-radius: 4px;
+}
+
+.onboarding-content::-webkit-scrollbar-thumb {
+  background: rgba(147, 51, 234, 0.5);
+  border-radius: 4px;
+}
+
+.onboarding-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(147, 51, 234, 0.7);
+}
+
+/* Glassmorphism effect for overlays */
+.glass-effect {
+  background: rgba(17, 24, 39, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient text effect */
+.gradient-text {
+  background: linear-gradient(135deg, #9333ea 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animated border gradient */
+.animated-border {
+  position: relative;
+  background: #1f2937;
+  border-radius: 12px;
+  padding: 2px;
+}
+
+.animated-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    #9333ea,
+    #3b82f6,
+    #10b981,
+    #f59e0b,
+    #ef4444,
+    #9333ea
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: borderRotate 3s linear infinite;
+}
+
+@keyframes borderRotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Tooltip styles */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  margin-bottom: 8px;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+}
+
+/* Skip button hover effect */
+.skip-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.skip-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s;
+}
+
+.skip-button:hover::before {
+  width: 100px;
+  height: 100px;
+}
+
+/* Progress step animation */
+.progress-step {
+  transition: all 0.3s ease;
+}
+
+.progress-step.active {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.5);
+}
+
+.progress-step.completed {
+  animation: checkmark 0.5s ease-out;
+}
+
+@keyframes checkmark {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Demo component styles */
+.demo-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(147, 51, 234, 0.1) 0%,
+    transparent 70%
+  );
+  animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .onboarding-modal {
+    padding: 1rem;
+  }
+  
+  .step-indicator {
+    font-size: 12px;
+  }
+  
+  .demo-container {
+    min-height: 200px;
+  }
+}
+
+/* Dark mode enhancements */
+@media (prefers-color-scheme: dark) {
+  .glass-effect {
+    background: rgba(17, 24, 39, 0.9);
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus styles */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #9333ea;
+  outline-offset: 2px;
+}
+
+/* Loading skeleton for demo components */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
