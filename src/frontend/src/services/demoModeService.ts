@@ -144,7 +144,7 @@ export class DemoModeManager {
     // Add more cached results for other demo queries...
   }
   
-  async simulateResearch(query: string): Promise<AsyncGenerator<any>> {
+  async *simulateResearch(query: string): AsyncGenerator<any> {
     // Find matching cached result
     const cachedResult = Array.from(this.cachedResults.values()).find(
       result => result.id === this.getQueryId(query)

@@ -78,13 +78,13 @@ const AssistantInterface: React.FC<AssistantInterfaceProps> = ({ subscription, o
     };
 
     // Register WebSocket listeners
-    const removeProgressListener = websocketService.on('research_update', handleProgressUpdate);
-    const removeErrorListener = websocketService.on('error', handleError);
+    websocketService.on('research_update', handleProgressUpdate);
+    websocketService.on('error', handleError);
 
     // Cleanup
     return () => {
-      removeProgressListener();
-      removeErrorListener();
+      websocketService.off('research_update', handleProgressUpdate);
+      websocketService.off('error', handleError);
     };
   }, []);
 

@@ -482,10 +482,14 @@ async def get_system_metrics(
 if __name__ == "__main__":
     import uvicorn
     
+    # Use environment variable for host binding, default to localhost for security
+    host = os.getenv("API_HOST", "127.0.0.1")
+    port = int(os.getenv("API_PORT", "8000"))
+    
     uvicorn.run(
         "src.api.main_enhanced:app",
-        host="0.0.0.0",
-        port=8000,
+        host=host,
+        port=port,
         reload=os.getenv('ENVIRONMENT') != 'production',
         log_level="info",
         access_log=True

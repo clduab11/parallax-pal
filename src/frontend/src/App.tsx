@@ -5,6 +5,7 @@ import GPUStatus from './components/GPUStatus';
 import LoginForm from './components/auth/LoginForm';
 import RegisterForm from './components/auth/RegisterForm';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { UserSubscription } from './types/auth';
 import subscriptionService from './services/subscriptionService';
@@ -122,10 +123,11 @@ const Dashboard: React.FC = () => {
 // Main App with routing
 const AppWithAuth: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<LoginForm />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<LoginForm />} />
           <Route path="/register" element={<RegisterForm />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
@@ -136,6 +138,7 @@ const AppWithAuth: React.FC = () => {
         </Routes>
       </Router>
     </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

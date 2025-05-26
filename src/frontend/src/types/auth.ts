@@ -86,3 +86,10 @@ export interface SubscriptionFeatures {
   ollama_access: boolean;
   is_pro: boolean;
 }
+
+export interface UserSubscription {
+  tier: 'free' | 'basic' | 'pro' | 'enterprise';
+  features: string[];
+  expiresAt?: string;
+  status?: 'active' | 'canceled' | 'past_due' | 'unpaid' | 'trialing';
+}

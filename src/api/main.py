@@ -1362,4 +1362,11 @@ app.openapi = custom_openapi
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import os
+    
+    # Use environment variable for host binding, default to localhost for security
+    host = os.getenv("API_HOST", "127.0.0.1")
+    port = int(os.getenv("API_PORT", "8000"))
+    
+    # In production, this should be handled by a proper ASGI server
+    uvicorn.run(app, host=host, port=port)

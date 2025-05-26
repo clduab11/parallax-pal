@@ -169,7 +169,7 @@ const AgentActivityDemo: React.FC = () => {
         const step = simulationSteps[currentStep];
         setAgents(prev => prev.map(agent => 
           agent.id === step.agentId
-            ? { ...agent, ...step }
+            ? { ...agent, status: step.status as 'idle' | 'working' | 'completed', progress: step.progress, message: step.message }
             : agent
         ));
         setCurrentStep(currentStep + 1);

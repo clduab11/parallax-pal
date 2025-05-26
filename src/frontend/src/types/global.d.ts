@@ -10,6 +10,14 @@ declare global {
       input: React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
     }
   }
+  
+  interface Window {
+    gtag?: (
+      command: 'config' | 'event',
+      targetId: string,
+      config?: Record<string, any>
+    ) => void;
+  }
 }
 
 declare module '*.module.css' {

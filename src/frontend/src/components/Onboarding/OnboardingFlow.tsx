@@ -125,7 +125,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSkip }) =
   };
 
   const handleComplete = () => {
-    setIsExiting = true;
+    setIsExiting(true);
     localStorage.setItem('onboarding_completed', 'true');
     localStorage.setItem('onboarding_date', new Date().toISOString());
     
@@ -143,7 +143,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSkip }) =
   };
 
   const handleSkip = () => {
-    setIsExiting = true;
+    setIsExiting(true);
     localStorage.setItem('onboarding_skipped', 'true');
     
     // Track skip
@@ -286,7 +286,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onSkip }) =
                       💡 Quick Tips
                     </h3>
                     <ul className="space-y-1">
-                      {steps[currentStep].tips.map((tip, index) => (
+                      {steps[currentStep]?.tips?.map((tip, index) => (
                         <li key={index} className="text-gray-300 text-sm flex items-start">
                           <span className="text-purple-400 mr-2">•</span>
                           {tip}
