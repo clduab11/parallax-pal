@@ -131,7 +131,7 @@ Starri evolves from a research assistant to an autonomous research **director** 
 ```
 
 **Innovation Features:**
-- **Agent-Driven Notebooks:** Automatically generate research experiments
+- **Agent-Driven Notebooks:** Automatically generate research experiments, syncs with NotebookLM
 - **Distributed Research:** Scale computations across multiple instances
 - **Interactive Visualizations:** Real-time research insight visualization
 - **Collaborative Research:** Multi-researcher collaboration platform
